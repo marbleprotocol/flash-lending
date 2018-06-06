@@ -3,12 +3,6 @@ pragma solidity 0.4.24;
 import "./Withdrawable.sol";
 
 
-interface ERC20 {
-    function balanceOf(address _owner) public view returns (uint balance);
-    function transfer(address _to, uint _value) public returns (bool success);
-}
-
-
 contract TradeExecutor is Withdrawable {
 
     // Allow exchange wrappers to send Ether
@@ -48,8 +42,8 @@ contract TradeExecutor is Withdrawable {
     }
 
     function transferBalance(address token, address to) private returns (bool) {
-        uint256 balance = ERC20(token).balanceOf(this);
-        return ERC20(token).transfer(to, balance);
+        uint256 balance = IERC20(token).balanceOf(this);
+        return IERC20(token).transfer(to, balance);
     }
 
     // Source: https://github.com/gnosis/MultiSigWallet/blob/master/contracts/MultiSigWallet.sol

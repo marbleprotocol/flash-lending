@@ -18,6 +18,12 @@ contract("TradeExecutor", accounts => {
     let bancorWrapper;
     let zeroExWrapper;
 
+    // Bancor
+    let converter1;
+    let smartToken1;
+    let smartToken1QuickBuyPath;
+    let smartToken1QuickSellPath;
+
     // 0x
     let weth;
     let exchange;
@@ -27,15 +33,11 @@ contract("TradeExecutor", accounts => {
     const trader = accounts[1];
     const maker = accounts[2];
 
-    // Bancor trades
-    let smartToken1;
-    let smartToken1QuickBuyPath;
-    let smartToken1QuickSellPath;
-
     beforeEach(async () => {
         tradeExecutor = await TradeExecutor.new();
         ({
             bancorWrapper,
+            converter1,
             smartToken1,
             smartToken1QuickBuyPath,
             smartToken1QuickSellPath
@@ -45,8 +47,8 @@ contract("TradeExecutor", accounts => {
 
     it("should trade Bancor", async () => {
         const bancor = new web3Beta.eth.Contract(bancorWrapper.abi, bancorWrapper.address);
-        const trade1 = bancor.methods.getTokens(smartToken1QuickBuyPath, 1).encodeABI();
-        const trade2 = bancor.methods.getEther(smartToken1QuickSellPath, 1).encodeABI();
+        const trade1 = bancor.methods.getTokens(converter1.address, smartToken1QuickBuyPath, 1).encodeABI();
+        const trade2 = bancor.methods.getEther(converter1.address, smartToken1QuickSellPath, 1).encodeABI();
 
         const prevBalance = await web3Beta.eth.getBalance(trader);
 
