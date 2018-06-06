@@ -5,36 +5,32 @@ const KyberWrapper = artifacts.require("KyberWrapper");
 const MockToken = artifacts.require("MockToken");
 const MockWETH = artifacts.require("MockWETH");
 const Web3 = require("web3");
-const web3Wrapper = new Web3(web3.currentProvider);
+const web3Beta = new Web3(web3.currentProvider);
 import { zeroExTokenOrderData, zeroExEtherOrderData } from "./helpers/ZeroExUtils";
 import { deployBancor } from "./helpers/BancorUtils";
 import { deployZeroEx } from "./helpers/ZeroExUtils";
+import { MAX_UINT } from "./helpers/constants";
+import { transactionCost } from "./helpers/utils";
+import BigNumber from "bignumber.js";
 
 contract("TradeExecutor", accounts => {
     let tradeExecutor;
     let bancorWrapper;
-    let kyberWrapper;
     let zeroExWrapper;
+
+    // 0x
     let weth;
+    let exchange;
+    let tokenTransferProxy;
 
     // Accounts
     const trader = accounts[1];
+    const maker = accounts[2];
 
     // Bancor trades
     let smartToken1;
     let smartToken1QuickBuyPath;
     let smartToken1QuickSellPath;
-
-    // 0x trades
-    const address = "0x0000000000000000000000000000000000000000";
-    const value = 0;
-    const TOKEN_AMOUNT = 1000;
-    const ETH_AMOUNT = 400;
-    const signature = {
-        v: 27,
-        r: "0x61a3ed31b43c8780e905a260a35faefcc527be7516aa11c0256729b5b351bc33",
-        s: "0x40349190569279751135161d22529dc25add4f6069af05be04cacbda2ace2254"
-    };
 
     beforeEach(async () => {
         tradeExecutor = await TradeExecutor.new();
@@ -44,11 +40,11 @@ contract("TradeExecutor", accounts => {
             smartToken1QuickBuyPath,
             smartToken1QuickSellPath
         } = await deployBancor(accounts));
-        ({ zeroExWrapper } = await deployZeroEx(web3Wrapper));
+        ({ zeroExWrapper, exchange, weth, tokenTransferProxy } = await deployZeroEx(web3Beta));
     });
 
     it("should trade Bancor", async () => {
-        const bancor = new web3Wrapper.eth.Contract(bancorWrapper.abi, bancorWrapper.address);
+        const bancor = new web3Beta.eth.Contract(bancorWrapper.abi, bancorWrapper.address);
         const trade1 = bancor.methods.getTokens(smartToken1QuickBuyPath, 1).encodeABI();
         const trade2 = bancor.methods.getEther(smartToken1QuickSellPath, 1).encodeABI();
 
@@ -60,109 +56,50 @@ contract("TradeExecutor", accounts => {
             { from: trader, value: 10000 }
         );
 
-        // const tokenBalance = await smartToken1.balanceOf(bancorWrapper.address);
-        // console.log(tokenBalance);
-
-        // await tradeExecutor.execute(bancorWrapper.address, trade2, { from: trader });
-
-        // const tokenBalanceAfter = await smartToken1.balanceOf(bancorWrapper.address);
-        // console.log(tokenBalanceAfter)
-
-        // await bancorWrapper.getTokens(smartToken1QuickBuyPath, 1, {
-        //     from: trader,
-        //     value: 10000
-        // });
-
-        // // Initialize the mock exchange with some maker tokens
-        // const tokenA = await MockToken.new([zeroEx.address], [TOKEN_AMOUNT]);
-        // // Token A is the maker token. WETH is the taker token
-        // const trade = {
-        //     orderAddresses: [address, address, tokenA.address, weth.address, address],
-        //     orderValues: [TOKEN_AMOUNT, value, value, value, value, value],
-        //     v: signature.v,
-        //     r: signature.r,
-        //     s: signature.s
-        // };
-        // const tradeData = zeroExTokenOrderData(trade);
-        // const zeroExWrapperAddr = zeroExWrapper._address;
-        // await tradeExecutor.execute(zeroExWrapperAddr, tradeData, { value: ETH_AMOUNT });
-        // const tokenBalance = await tokenA.balanceOf(tradeExecutor.address);
-        // // The trade executor should receive tokens
-        // expect(Number(tokenBalance)).to.equal(TOKEN_AMOUNT);
-        // const wethBalance = await weth.balanceOf(zeroEx.address);
-        // // The maker should receive wrapped Ether
-        // expect(Number(wethBalance)).to.equal(ETH_AMOUNT);
+        // TODO: Check balances
     });
 
-    // it("should trade tokens for Ether", async () => {
-    //     // Iniitialize the wrapper with tokens
-    //     const zeroExWrapperAddr = zeroExWrapper._address;
-    //     const tokenA = await MockToken.new([zeroExWrapperAddr], [TOKEN_AMOUNT]);
+    it.only("should trade 0x", async () => {
+        const tokenA = await MockToken.new([maker], [20000]);
+        await weth.deposit({ from: maker, value: 30000 });
 
-    //     // Create some wrapped Ether and send it to the exchange so that it can complete the trade
-    //     await weth.deposit({ from: accounts[1], value: ETH_AMOUNT });
+        // Approve the proxy to transfer tokens on behalf of the maker
+        await weth.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
+        await tokenA.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
 
-    //     const wethBalance = await weth.balanceOf(accounts[1]);
-    //     expect(Number(wethBalance)).to.equal(ETH_AMOUNT);
+        const zeroEx = new web3Beta.eth.Contract(zeroExWrapper.abi, zeroExWrapper.address);
+        const tradeData1 = {
+            exchange: exchange.address,
+            maker: maker,
+            makerToken: tokenA.address,
+            takerToken: weth.address,
+            makerAmount: "1000",
+            takerAmount: "800"
+        };
+        const trade1 = await zeroExTokenOrderData(web3Beta, zeroEx, tradeData1);
 
-    //     await weth.transfer(zeroEx.address, ETH_AMOUNT, { from: accounts[1] });
+        const tradeData2 = {
+            exchange: exchange.address,
+            maker: maker,
+            makerToken: weth.address,
+            takerToken: tokenA.address,
+            makerAmount: "1000",
+            takerAmount: "1000"
+        };
+        const trade2 = await zeroExEtherOrderData(web3Beta, zeroEx, tradeData2);
 
-    //     const trade = {
-    //         orderAddresses: [address, address, weth.address, tokenA.address, address],
-    //         orderValues: [ETH_AMOUNT, value, value, value, value, value],
-    //         fillTakerTokenAmount: TOKEN_AMOUNT,
-    //         shouldThrowOnInsufficientBalanceOrAllowance: true,
-    //         v: signature.v,
-    //         r: signature.r,
-    //         s: signature.s
-    //     };
+        const prevBalance = await web3Beta.eth.getBalance(trader);
 
-    //     const tradeData = zeroExEtherOrderData(trade);
+        const result = await tradeExecutor.trade(
+            [zeroExWrapper.address, zeroExWrapper.address],
+            tokenA.address,
+            trade1,
+            trade2,
+            { from: trader, value: 800 }
+        );
 
-    //     await tradeExecutor.execute(zeroExWrapperAddr, tradeData);
-
-    //     const ethBalance = await web3Wrapper.eth.getBalance(tradeExecutor.address);
-    //     expect(Number(ethBalance)).to.equal(ETH_AMOUNT);
-
-    //     const tokenBalance = await tokenA.balanceOf(zeroEx.address);
-    //     expect(Number(tokenBalance)).to.equal(TOKEN_AMOUNT);
-    // });
-
-    // it("should make two trades atomically", async () => {
-    //     // Initialize the mock exchange with some maker tokens
-    //     const tokenA = await MockToken.new([zeroEx.address], [TOKEN_AMOUNT]);
-    //     const zeroExWrapperAddr = zeroExWrapper._address;
-
-    //     const tokenTrade = {
-    //         orderAddresses: [address, address, tokenA.address, weth.address, address],
-    //         orderValues: [TOKEN_AMOUNT, value, value, value, value, value],
-    //         fillTakerTokenAmount: ETH_AMOUNT,
-    //         shouldThrowOnInsufficientBalanceOrAllowance: true,
-    //         v: signature.v,
-    //         r: signature.r,
-    //         s: signature.s
-    //     };
-
-    //     const tokenTradeData = zeroExTokenTradeData(tokenTrade);
-
-    //     const etherTrade = {
-    //         orderAddresses: [address, address, weth.address, tokenA.address, address],
-    //         orderValues: [ETH_AMOUNT, value, value, value, value, value],
-    //         fillTakerTokenAmount: 0, // Let the smart contract decide based on proceeds of the first trade
-    //         shouldThrowOnInsufficientBalanceOrAllowance: true,
-    //         v: signature.v,
-    //         r: signature.r,
-    //         s: signature.s
-    //     };
-
-    //     const etherTradeData = zeroExEtherTradeData(etherTrade);
-
-    //     await tradeExecutor.trade(
-    //         [zeroExWrapperAddr, zeroExWrapperAddr],
-    //         tokenA.address,
-    //         tokenTradeData,
-    //         etherTradeData,
-    //         { value: ETH_AMOUNT }
-    //     );
-    // });
+        const newBalance = await web3Beta.eth.getBalance(trader);
+        const txCost = await transactionCost(web3Beta, result);
+        expect(newBalance).to.equal(BigNumber(prevBalance).minus(txCost).plus(200).toString());
+    });
 });
