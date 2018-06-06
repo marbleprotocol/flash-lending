@@ -23,20 +23,26 @@ contract TradeExecutor is Withdrawable {
         public
         payable
     {
-        require(execute(wrappers[0], trade1));
+        // Execute the first trade to get tokens
+        require(execute(wrappers[0], msg.value, trade1));
 
         // Transfer tokens to the next exchange wrapper
-        // uint256 balance = ERC20(token).balanceOf(this);
-        // ERC20(token).transfer(wrappers[1], balance);
+        transferBalance(token, wrappers[1]);
 
-        // require(execute(wrappers[1], trade2));
+        // Execute the second trade to get Ether
+        require(execute(wrappers[1], 0, trade2));
         
-        // // Send the arbitrageur Ether
-        // msg.sender.transfer(address(this).balance);
+        // Send the arbitrageur Ether
+        msg.sender.transfer(address(this).balance);
     }
 
-    function execute(address exchangeWrapper, bytes data) public payable returns (bool) {
-        return external_call(exchangeWrapper, msg.value, data.length, data);
+    function execute(address wrapper, uint256 value, bytes data) private returns (bool) {
+        return external_call(wrapper, value, data.length, data);
+    }
+
+    function transferBalance(address token, address to) private returns (bool) {
+        uint256 balance = ERC20(token).balanceOf(this);
+        return ERC20(token).transfer(to, balance);
     }
 
     // Source: https://github.com/gnosis/MultiSigWallet/blob/master/contracts/MultiSigWallet.sol

@@ -60,6 +60,14 @@ contract("TradeExecutor", accounts => {
             { from: trader, value: 10000 }
         );
 
+        // const tokenBalance = await smartToken1.balanceOf(bancorWrapper.address);
+        // console.log(tokenBalance);
+
+        // await tradeExecutor.execute(bancorWrapper.address, trade2, { from: trader });
+
+        // const tokenBalanceAfter = await smartToken1.balanceOf(bancorWrapper.address);
+        // console.log(tokenBalanceAfter)
+
         // await bancorWrapper.getTokens(smartToken1QuickBuyPath, 1, {
         //     from: trader,
         //     value: 10000

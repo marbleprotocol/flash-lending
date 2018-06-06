@@ -11,13 +11,6 @@ module.exports = {
             gas: 100000000, // High
             gasPrice: 18000000000
         },
-        demo: {
-            host: "localhost",
-            port: 7545,
-            network_id: "*", // Match any network id
-            gas: 100000000, // High
-            gasPrice: 0
-        },
         mainnet: {
             provider: () => {
                 return new Infura("https://mainnet.infura.io/");
