@@ -10,7 +10,7 @@ import { zeroExTokenOrderData, zeroExEtherOrderData } from "./helpers/ZeroExUtil
 import { deployBancor } from "./helpers/BancorUtils";
 import { deployZeroEx } from "./helpers/ZeroExUtils";
 import { MAX_UINT } from "./helpers/constants";
-import { transactionCost } from "./helpers/utils";
+import { getTxCost } from "./helpers/utils";
 import BigNumber from "bignumber.js";
 
 contract("TradeExecutor", accounts => {
@@ -48,7 +48,9 @@ contract("TradeExecutor", accounts => {
         const trade1 = bancor.methods.getTokens(smartToken1QuickBuyPath, 1).encodeABI();
         const trade2 = bancor.methods.getEther(smartToken1QuickSellPath, 1).encodeABI();
 
-        await tradeExecutor.trade(
+        const prevBalance = await web3Beta.eth.getBalance(trader);
+
+        const result = await tradeExecutor.trade(
             [bancorWrapper.address, bancorWrapper.address],
             smartToken1.address,
             trade1,
@@ -56,10 +58,15 @@ contract("TradeExecutor", accounts => {
             { from: trader, value: 10000 }
         );
 
-        // TODO: Check balances
+        const newBalance = await web3Beta.eth.getBalance(trader);
+        const txCost = await getTxCost(web3Beta, result);
+
+        // These should be pretty close, with differences due to Bancor formula margin of error
+        // console.log(newBalance);
+        // console.log(BigNumber(prevBalance).minus(txCost).toString());
     });
 
-    it.only("should trade 0x", async () => {
+    it("should trade 0x", async () => {
         const tokenA = await MockToken.new([maker], [20000]);
         await weth.deposit({ from: maker, value: 30000 });
 
@@ -99,7 +106,7 @@ contract("TradeExecutor", accounts => {
         );
 
         const newBalance = await web3Beta.eth.getBalance(trader);
-        const txCost = await transactionCost(web3Beta, result);
+        const txCost = await getTxCost(web3Beta, result);
         expect(newBalance).to.equal(BigNumber(prevBalance).minus(txCost).plus(200).toString());
     });
 });
