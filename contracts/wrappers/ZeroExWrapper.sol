@@ -4,7 +4,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "../interface/WETH.sol";
 import "../interface/ZeroEx.sol";
 import "./ExchangeWrapper.sol";
-import "../../Transfer.sol";
+import "../Transfer.sol";
 
 
 contract ZeroExWrapper is ExchangeWrapper, Transfer {

@@ -4,11 +4,10 @@ const Exchange = artifacts.require("Exchange");
 const WETH = artifacts.require("MockWETH");
 import { ZeroEx } from "0x.js";
 import { BigNumber } from "@0xproject/utils";
-import { NULL_ADDRESS } from "../../util/constants";
 
 export const deployZeroEx = async web3 => {
     const tokenTransferProxy = await TokenTransferProxy.new();
-    const exchange = await Exchange.new(NULL_ADDRESS, tokenTransferProxy.address);
+    const exchange = await Exchange.new(ZeroEx.NULL_ADDRESS, tokenTransferProxy.address);
     // Add the exchange as an authorized address on the transfer proxy
     await tokenTransferProxy.addAuthorizedAddress(exchange.address);
     const weth = await WETH.new();

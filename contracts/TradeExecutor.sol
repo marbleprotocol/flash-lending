@@ -26,13 +26,13 @@ contract TradeExecutor is Withdrawable {
         require(execute(wrappers[0], trade1));
 
         // Transfer tokens to the next exchange wrapper
-        uint256 balance = ERC20(token).balanceOf(this);
-        ERC20(token).transfer(wrappers[1], balance);
+        // uint256 balance = ERC20(token).balanceOf(this);
+        // ERC20(token).transfer(wrappers[1], balance);
 
-        require(execute(wrappers[1], trade2));
+        // require(execute(wrappers[1], trade2));
         
-        // Send the arbitrageur Ether
-        msg.sender.transfer(address(this).balance);
+        // // Send the arbitrageur Ether
+        // msg.sender.transfer(address(this).balance);
     }
 
     function execute(address exchangeWrapper, bytes data) public payable returns (bool) {

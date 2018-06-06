@@ -1,5 +1,4 @@
 const Token = artifacts.require("MockToken");
-import { NULL_ADDRESS, EXPIRATION } from "../util/constants";
 import { createOrder } from "../../scripts/createTrade";
 import { ZeroEx } from "0x.js";
 import {
