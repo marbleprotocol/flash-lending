@@ -1,9 +1,9 @@
 pragma solidity 0.4.24;
 
-import "./ExchangeWrapper.sol";
+import "../Withdrawable.sol";
 import "../interface/Bancor.sol";
 
-contract BancorWrapper is ExchangeWrapper {
+contract BancorWrapper is Withdrawable {
 
     uint256 public constant MAX_UINT = uint(-1);
 

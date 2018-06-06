@@ -10,6 +10,8 @@ interface IERC20 {
 
 
 contract Withdrawable is Ownable {
+    function () public payable {}
+
     // Allow the owner to withdraw Ether
     function withdraw() public onlyOwner {
         owner.transfer(address(this).balance);
