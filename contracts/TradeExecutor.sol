@@ -14,6 +14,13 @@ contract TradeExecutor is Withdrawable {
     // Allow exchange wrappers to send Ether
     function () public payable {}
 
+    /*
+     * @dev Execute multiple trades in a single transaction.
+     * @param wrappers Addresses of exchange wrappers.
+     * @param token Address of ERC20 token to receive in first trade.
+     * @param trade1 Calldata of Ether => ERC20 trade.
+     * @param trade2 Calldata of ERC20 => Ether trade.
+    */
     function trade(
         address[2] wrappers,
         address token,
