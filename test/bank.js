@@ -10,14 +10,16 @@ contract("Bank", accounts => {
 
     // Accounts
     const lender = accounts[0];
+    const borrower = accounts[1]; 
 
     // Constants
     const ETH = "0x0000000000000000000000000000000000000000";
     const DEPOSIT_AMOUNT = 1000;
+    const PROFIT = 10; 
 
     beforeEach(async () => {
         bank = await Bank.new();
-        token = await Token.new([lender], [DEPOSIT_AMOUNT]);
+        token = await Token.new([lender, borrower], [DEPOSIT_AMOUNT, PROFIT]);
     });
 
     it("should deposit Ether", async () => {
@@ -56,15 +58,20 @@ contract("Bank", accounts => {
         expect(bankZRX.toNumber()).to.equal(0);
     });
 
-    // it("should deposit", async () => {
-    //     const creditBalance = await creditToken.balanceOf(lender);
-    //     expect(creditBalance.toNumber()).to.equal(constants.LEND_AMOUNT);
+// TODO: 
+
+    // it  ("should withdraw profits in ETH", async () => {
+    //     const lenderZRXBefore = await token.balanceOf(lender); 
+    //     await bank.deposit(ETH, DEPOSIT_AMOUNT); 
+
+    //     const bal = await token.balanceOf(bank.address)
+    //     console.log(bal.toNumber())
+    //     await bank.repay(ETH, PROFIT,{from:borrower,value:PROFIT})
+
+    //     // await bank.withdraw(ETH, DEPOSIT_AMOUNT , {from: lender}); 
+    //     // const lenderZRXAfter = await token.balanceOf(lender); 
+    //     // expect(DEPOSIT_AMOUNT + PROFIT).to.equal(lenderZRXAfter);
+
     // });
 
-    // it("should withdraw", async () => {
-    //     await bank.withdraw(base.address, constants.LEND_AMOUNT, { from: lender });
-
-    //     const creditBalance = await creditToken.balanceOf(lender);
-    //     expect(creditBalance.toNumber()).to.equal(0);
-    // });
 });
