@@ -14,18 +14,20 @@ contract MockArbitrage is Arbitrage, Ownable, Transfer {
 
     address public lend;
     address public bank;
+    uint256 public fee; 
     address constant public ETH = 0x0;
-    uint256 repayPremium = 0; 
 
     constructor(address _lend) public {
         lend = _lend;
         bank = Lend(lend).bank();
+        fee = Lend(lend).fee();
     }
     
     // TESTING PURPOSES ONLY 
     function setRepay (uint256 value) public {
-        repayPremium = value; 
+        fee = value; 
     }
+
     // Receive eth from bank
     function () payable public {}
 
@@ -38,7 +40,7 @@ contract MockArbitrage is Arbitrage, Ownable, Transfer {
 
         // * make money here * //
 
-        uint256 repayAmount = amount + repayPremium; 
+        uint256 repayAmount = amount.add(amount.mul(fee).div(10**18));
 
         if (token == ETH) {
             Bank(bank).repay.value(repayAmount)(token, repayAmount);
