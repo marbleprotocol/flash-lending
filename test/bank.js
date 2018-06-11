@@ -2,6 +2,8 @@ const Bank = artifacts.require("Bank");
 const Token = artifacts.require("MockToken");
 const chai = require("chai"),
     expect = chai.expect;
+const chaiAsPromised = require("chai-as-promised");
+chai.use(chaiAsPromised);
 
 contract("Bank", accounts => {
     // Contracts
@@ -58,20 +60,18 @@ contract("Bank", accounts => {
         expect(bankZRX.toNumber()).to.equal(0);
     });
 
-// TODO: 
+    it.only("should withdraw profits in tokens", async () => {
+        const lenderZRXBefore = await token.balanceOf(lender); 
+        await bank.deposit(token.address, DEPOSIT_AMOUNT,{from:lender}); 
 
-    // it  ("should withdraw profits in ETH", async () => {
-    //     const lenderZRXBefore = await token.balanceOf(lender); 
-    //     await bank.deposit(ETH, DEPOSIT_AMOUNT); 
+        await bank.repay(token.address, PROFIT,{from:borrower})
 
-    //     const bal = await token.balanceOf(bank.address)
-    //     console.log(bal.toNumber())
-    //     await bank.repay(ETH, PROFIT,{from:borrower,value:PROFIT})
+        const withdrawAmount = DEPOSIT_AMOUNT + PROFIT; 
 
-    //     // await bank.withdraw(ETH, DEPOSIT_AMOUNT , {from: lender}); 
-    //     // const lenderZRXAfter = await token.balanceOf(lender); 
-    //     // expect(DEPOSIT_AMOUNT + PROFIT).to.equal(lenderZRXAfter);
+        await bank.withdraw(token.address, withdrawAmount, {from: lender}); 
+        const lenderZRXAfter = await token.balanceOf(lender); 
+        expect(withdrawAmount).to.equal(lenderZRXAfter.toNumber());
 
-    // });
+    });
 
 });

@@ -30,7 +30,7 @@ contract Bank is Ownable, Transfer {
     */
     function deposit(address token, uint256 amount) public payable {
         require(token == ETH || msg.value == 0);
-        deposits[token][msg.sender] = amount;
+        deposits[token][msg.sender] = deposits[token][msg.sender].add(amount);
         totalDeposits[token] = totalDeposits[token].add(amount); 
         transferFrom(token, msg.sender, this, amount);
     }
@@ -39,12 +39,21 @@ contract Bank is Ownable, Transfer {
     * @dev Withdraw tokens from the bank.
     */
     function withdraw(address token, uint256 amount) external {
-        require(balanceOf(token).mul(deposits[token][msg.sender]).div(totalDeposits[token]) >= amount); 
-        deposits[token][msg.sender] = deposits[token][msg.sender].sub(amount);
-        totalDeposits[token] = totalDeposits[token].add(amount); 
-        transfer(token, msg.sender, amount);
+        require(getAllocation(token,msg.sender) >= amount); 
+        if (amount <= deposits[token][msg.sender]){
+            deposits[token][msg.sender] =  deposits[token][msg.sender].sub(amount);
+            totalDeposits[token] = totalDeposits[token].sub(amount); 
+        } else {
+            deposits[token][msg.sender] = 0; 
+            totalDeposits[token] = 0;
+        }
+        
+          transfer(token, msg.sender, amount);
     }
 
+    function getAllocation(address token, address who) public returns (uint256 allocation){
+        return balanceOf(token).mul(deposits[token][msg.sender]).div(totalDeposits[token]);
+    }
     /**
     * @dev Borrow tokens from the bank.
     */
