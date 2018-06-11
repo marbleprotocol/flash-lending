@@ -6,6 +6,7 @@ import "../interface/Kyber.sol";
 contract KyberWrapper is ExchangeWrapper {
 
     ERC20 constant internal ETH_TOKEN_ADDRESS = ERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
+    uint256 public constant MAX_UINT = uint(-1);
 
     constructor(address _exchange) public {
         exchange = _exchange;
@@ -43,8 +44,11 @@ contract KyberWrapper is ExchangeWrapper {
     {
         // Use the full balance of tokens transferred from the trade executor
         uint256 srcAmount = src.balanceOf(this);
-        // Approve the exchange to transfer tokens from this contract to the reserve
-        src.approve(exchange, srcAmount);
+
+        if (src.allowance(this, exchange) < srcAmount) {
+            // Approve the exchange to transfer tokens from this contract to the reserve
+            src.approve(exchange, MAX_UINT);
+        }
 
         Kyber(exchange).trade(
             src,
