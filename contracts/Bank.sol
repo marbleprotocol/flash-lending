@@ -40,18 +40,15 @@ contract Bank is Ownable, Transfer {
     */
     function withdraw(address token, uint256 amount) external {
         require(getAllocation(token,msg.sender) >= amount); 
-        if (amount <= deposits[token][msg.sender]){
-            deposits[token][msg.sender] =  deposits[token][msg.sender].sub(amount);
-            totalDeposits[token] = totalDeposits[token].sub(amount); 
-        } else {
-            deposits[token][msg.sender] = 0; 
-            totalDeposits[token] = 0;
-        }
+        // uint256 portion = deposits[token][msg.sender].div(totalDeposits[token]);
+        // deposits[token][msg.sender] = amount deposits[token][msg.sender].sub();
+        // totalDeposits[token] = totalDeposits[token].sub(amount); 
+
         
-          transfer(token, msg.sender, amount);
+        transfer(token, msg.sender, amount);
     }
 
-    function getAllocation(address token, address who) public returns (uint256 allocation){
+    function getAllocation(address token, address who) public view returns (uint256 allocation){
         return balanceOf(token).mul(deposits[token][msg.sender]).div(totalDeposits[token]);
     }
     /**

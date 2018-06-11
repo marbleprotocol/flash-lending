@@ -12,12 +12,12 @@ contract("Bank", accounts => {
 
     // Accounts
     const lender = accounts[0];
-    const borrower = accounts[1]; 
+    const borrower = accounts[1];
 
     // Constants
     const ETH = "0x0000000000000000000000000000000000000000";
     const DEPOSIT_AMOUNT = 1000;
-    const PROFIT = 10; 
+    const PROFIT = 10;
 
     beforeEach(async () => {
         bank = await Bank.new();
@@ -60,18 +60,23 @@ contract("Bank", accounts => {
         expect(bankZRX.toNumber()).to.equal(0);
     });
 
-    it.only("should withdraw profits in tokens", async () => {
-        const lenderZRXBefore = await token.balanceOf(lender); 
-        await bank.deposit(token.address, DEPOSIT_AMOUNT,{from:lender}); 
-
-        await bank.repay(token.address, PROFIT,{from:borrower})
-
-        const withdrawAmount = DEPOSIT_AMOUNT + PROFIT; 
-
-        await bank.withdraw(token.address, withdrawAmount, {from: lender}); 
-        const lenderZRXAfter = await token.balanceOf(lender); 
+    it("should withdraw profits in tokens", async () => {
+        await bank.deposit(token.address, DEPOSIT_AMOUNT, { from: lender });
+        await bank.repay(token.address, PROFIT, { from: borrower }); // create profit
+        const withdrawAmount = DEPOSIT_AMOUNT + PROFIT;
+        await bank.withdraw(token.address, withdrawAmount, { from: lender });
+        const lenderZRXAfter = await token.balanceOf(lender);
         expect(withdrawAmount).to.equal(lenderZRXAfter.toNumber());
-
     });
 
+    it("should withdraw profits in ETH", async () => {
+        await bank.deposit(ETH, DEPOSIT_AMOUNT, { from: lender });
+        await bank.repay(ETH, PROFIT, { from: borrower }); // create profit
+        const withdrawAmount = DEPOSIT_AMOUNT + PROFIT;
+        const allocation = await bank.getAllocation(ETH,lender);
+        console.log(allocation.toNumber())
+        //await bank.withdraw(ETH, withdrawAmount, { from: lender });
+        // const lenderETHAfter = await web3.eth.getBalance(lender);
+        // expect(withdrawAmount).to.equal(lenderETHAfter.toNumber());
+    });
 });
