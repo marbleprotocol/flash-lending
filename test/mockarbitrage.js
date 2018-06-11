@@ -8,6 +8,8 @@ const expect = chai.expect;
 const chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 
+const ZeroExUtils = 
+
 contract("MockArbitrage", accounts => {
     // Contracts
     let bank;
@@ -62,9 +64,10 @@ contract("MockArbitrage", accounts => {
         };
     };
 
-    it("should arbitrage with Ether", async () => {
+    it.only("should arbitrage with Ether", async () => {
         ({ bank, lend, arbitrage, token } = await deployArbitrage(0));
-        await arbitrage.borrow(ETH, ARBITRAGE_AMOUNT, { from: trader });
+        const data = 'phonydata'.encodeABI(); // FIX
+        await arbitrage.borrow(ETH, ARBITRAGE_AMOUNT, data, { from: trader });
         const bankETHAfter = await web3.eth.getBalance(bank.address);
         expect(bankETHAfter.toNumber()).to.equal(DEPOSIT_AMOUNT);
     });
