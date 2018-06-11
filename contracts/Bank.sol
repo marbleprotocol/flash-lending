@@ -8,12 +8,11 @@ import "./Transfer.sol";
 contract Bank is Ownable, Transfer {
     using SafeMath for *;
 
-
-    // Token => Total Deposited
-    mapping (address => uint256) public totalDeposits;
-
-    // Token => User => Deposited
+    // Token => Account => Deposit
     mapping (address => mapping (address => uint256)) public deposits;
+
+    // Token => Total Deposits
+    mapping (address => uint256) public totalDeposits;
 
     // Lender => Approved
     mapping (address => bool) public approved;
@@ -29,28 +28,26 @@ contract Bank is Ownable, Transfer {
     * @dev Deposit tokens to the bank.
     */
     function deposit(address token, uint256 amount) public payable {
-        require(token == ETH || msg.value == 0);
+        transferFrom(token, msg.sender, this, amount);
         deposits[token][msg.sender] = deposits[token][msg.sender].add(amount);
         totalDeposits[token] = totalDeposits[token].add(amount); 
-        transferFrom(token, msg.sender, this, amount);
     }
 
     /**
     * @dev Withdraw tokens from the bank.
     */
     function withdraw(address token, uint256 amount) external {
-        require(getAllocation(token,msg.sender) >= amount); 
-        // uint256 portion = deposits[token][msg.sender].div(totalDeposits[token]);
-        // deposits[token][msg.sender] = amount deposits[token][msg.sender].sub();
-        // totalDeposits[token] = totalDeposits[token].sub(amount); 
+        require(balanceOf(token, msg.sender) >= amount);
 
+        uint256 totalDeposit = totalDeposits[token];
+        uint256 totalSupply = totalSupplyOf(token);
+        uint256 principal = amount.mul(totalDeposit).div(totalSupply);
+        deposits[token][msg.sender] = deposits[token][msg.sender].sub(principal);
         
+        // Transfer tokens to the withdrawer
         transfer(token, msg.sender, amount);
     }
 
-    function getAllocation(address token, address who) public view returns (uint256 allocation){
-        return balanceOf(token).mul(deposits[token][msg.sender]).div(totalDeposits[token]);
-    }
     /**
     * @dev Borrow tokens from the bank.
     */
@@ -86,12 +83,10 @@ contract Bank is Ownable, Transfer {
         approved[borrower] = false;
     }
 
-    /* ========== UTILS ========== */
-
     /**
     * @dev Gets balance of bank. 
     */
-    function balanceOf(address token) public returns (uint256 balance) {
+    function totalSupplyOf(address token) public view returns (uint256 balance) {
         if (token == ETH) {
             return address(this).balance; 
         } else {
@@ -100,30 +95,14 @@ contract Bank is Ownable, Transfer {
     }
 
     /**
-    * @dev Transfer tokens from the bank to an account.
+    * @dev Gets balance of a specific account.
+    * @notice Accounts have a proportional claim to any interest earned by the bank.
     */
-    function transfer(address token, address to, uint256 amount) internal returns (bool success) {
-        super.transfer(token, to, amount);
-        return true;
-    }
-
-    /**
-    * @dev Transfer tokens from an account to the bank.
-    */
-    function transferFrom( 
-        address token,
-        address from,
-        address to,
-        uint256 amount
-    )
-        internal
-        returns (bool success)
-    {
-        if (token != ETH) { 
-            // Remember to approve first
-            require(ERC20(token).transferFrom(from, to, amount));
-        }
-        return true;
+    function balanceOf(address token, address who) public view returns (uint256 balance) {
+        uint256 totalSupply = totalSupplyOf(token);
+        uint256 deposit = deposits[token][who];
+        uint256 totalDeposit = totalDeposits[token];
+        return deposit.mul(totalSupply).div(totalDeposit);
     }
 
 }
