@@ -26,7 +26,7 @@ contract("MockArbitrage", accounts => {
     const ETH = "0x0000000000000000000000000000000000000000";
     const ARBITRAGE_AMOUNT = 50000;
 
-    const FEE = 10 ** 15; // 10**15 / 10*18 = .1% fee
+    const FEE = 0 //10 ** 15; // 10**15 / 10*18 = .1% fee
 
     // const Web3 = require("web3");
     // const web3Wrapper = new Web3(web3.currentProvider);

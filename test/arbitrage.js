@@ -44,7 +44,7 @@ contract("ArbitrageImpl", accounts => {
     const ARBITRAGE_AMOUNT = 50000;
     const MOCK_TOKEN_AMOUNT = 20000;
 
-    const FEE = 10 ** 15; // 10**15 / 10*18 = .1% fee
+    const FEE = 0 //10 ** 15; // 10**15 / 10*18 = .1% fee
 
     beforeEach(async () => {
         tradeExecutor = await TradeExecutor.new();
@@ -52,24 +52,28 @@ contract("ArbitrageImpl", accounts => {
         lend = await Lend.new(bank.address, FEE);
         arbitrage = await Arbitrage.new(lend.address, tradeExecutor.address, { from: trader });
 
+        ({ zeroExWrapper, exchange, weth, tokenTransferProxy } = await deployZeroEx(web3Beta));
+
         // Approve the Lend contract as a bank borrower
         await bank.addBorrower(lend.address);
 
-        // Deposit ZRX and ETH to the bank from the lender
-        // await bank.deposit(token.address, DEPOSIT_AMOUNT, { from: lender });
-        await bank.deposit(ETH, DEPOSIT_AMOUNT, {
-            from: lender,
-            value: DEPOSIT_AMOUNT
-        });
-
-        ({ zeroExWrapper, exchange, weth, tokenTransferProxy } = await deployZeroEx(web3Beta));
-
-
+        await bank.deposit(ETH, DEPOSIT_AMOUNT, {from: lender, value: DEPOSIT_AMOUNT});
     });
 
     it("should execute 0x bytes", async () => {
-        const tokenA = await MockToken.new([maker], [MOCK_TOKEN_AMOUNT]);
-        await weth.deposit({ from: maker, value: 30000 });
+
+        const tokenA = await MockToken.new([maker], [20000]);
+        await weth.deposit({ from: maker, value: 20000 });
+
+        const bankETHBefore = await web3Beta.eth.getBalance(bank.address);
+        console.log("BANK ETH BEFORE: ", bankETHBefore); 
+
+        const balBefore = await weth.balanceOf(maker); 
+        console.log("MAKER WETH BEFORE: ", balBefore.toNumber()); 
+
+         const balBeforeTrader = await  web3Beta.eth.getBalance(arbitrage.address);
+        console.log("ARB TRADER ETH BEFORE: ", balBeforeTrader); 
+
         //Approve the proxy to transfer tokens on behalf of the maker
         await weth.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
         await tokenA.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
@@ -81,8 +85,8 @@ contract("ArbitrageImpl", accounts => {
             maker: maker,
             makerToken: tokenA.address,
             takerToken: weth.address,
-            makerAmount: "1000",
-            takerAmount: "800"
+            makerAmount: "500",
+            takerAmount: "400"
         };
         const trade1 = await zeroExTokenOrderData(web3Beta, zeroEx, tradeData1);
 
@@ -103,6 +107,14 @@ contract("ArbitrageImpl", accounts => {
 
        await arbitrage.borrow(ETH, ARBITRAGE_AMOUNT, data, { from: trader });
 
+       const balAfterTrader = await  web3Beta.eth.getBalance(arbitrage.address);
+        console.log("ARB TRADER ETH AFTER: ", balAfterTrader); 
+
+       const balAfter = await weth.balanceOf(maker); 
+       console.log("MAKER WETH AFTER: ", balAfter.toNumber()); 
+
+       const bankETHAfter = await web3Beta.eth.getBalance(bank.address);
+       console.log("BANK ETH AFTER: ", bankETHAfter); 
 
     });
 

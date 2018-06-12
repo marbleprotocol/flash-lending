@@ -9,7 +9,6 @@ import "./Bank.sol";
 import "./Transfer.sol";
 import "./ExternalCall.sol";
 
-
 contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
     using SafeMath for *;
 
@@ -25,15 +24,15 @@ contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
         bank = Lend(lend).bank();
         fee = Lend(lend).fee();
     }
-    
-    // TESTING PURPOSES ONLY 
-    function setRepay (uint256 value) public {
-        fee = value; 
-    }
 
     // Receive eth from bank
     function () payable public {}
 
+    /*
+     * @dev Borrow for atomic arbitrage. Entry point for Lend. 
+     * @param token 
+     * @param 
+    */
     function borrow(address token, uint256 amount, bytes data) external onlyOwner {
         Lend(lend).borrow(token, amount, data);
     }
