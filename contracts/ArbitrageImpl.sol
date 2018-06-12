@@ -30,17 +30,25 @@ contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
 
     /*
      * @dev Borrow for atomic arbitrage. Entry point for Lend. 
-     * @param token 
-     * @param 
+     * @param token - Token address to borrow from bank
+     * @param amount - Amount to borrow from bank
+     * @param data - Order call data for external_call to execute
     */
     function borrow(address token, uint256 amount, bytes data) external onlyOwner {
         Lend(lend).borrow(token, amount, data);
     }
 
+    /* 
+    * @dev Called by Lend after it borrows money to this account from the Bank. 
+    * Executes the two trades passed in, then repays bank. This contract keeps the profit. 
+    * @param token - Token address to borrow from bank
+    * @param amount - Amount to borrow from bank
+    * @param data - Order call data for external_call to execute
+    */
     function executeArbitrage(address token, uint256 amount, bytes data) external payable returns (bool) {
         require(msg.sender == lend);
 
-        // Call the trade executor
+        // Calls the trade executor
         external_call(tradeExecutor, amount, data.length, data);
 
         uint256 repayAmount = amount.add(amount.mul(fee).div(10**18));
@@ -51,4 +59,7 @@ contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
             Bank(bank).repay(token, repayAmount); 
         }
     }
+
+    // TODO: Allow owner to withdraw. 
+    
 }
