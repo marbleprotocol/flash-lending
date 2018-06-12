@@ -32,12 +32,13 @@ contract BancorWrapper is Withdrawable {
         // Get the first token in the token path
         IERC20Token token = _path[0];
         uint256 balance = token.balanceOf(address(this));
+
+        if (IERC20Token(token).allowance(this, converter) < balance) {
+            IERC20Token(token).approve(converter, MAX_UINT);
+        }
+
         Bancor(converter).quickConvert(_path, balance, _minReturn);
         msg.sender.transfer(address(this).balance);
-    }
-
-    function approve(address token, address spender) public {
-        IERC20Token(token).approve(spender, MAX_UINT);
     }
 
 }
