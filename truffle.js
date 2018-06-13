@@ -9,7 +9,7 @@ module.exports = {
             port: 8545,
             network_id: "*", // Match any network id
             gas: 100000000, // High
-            gasPrice: 18000000000
+            gasPrice: 0 //18000000000
         },
         mainnet: {
             provider: () => {

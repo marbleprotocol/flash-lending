@@ -27,16 +27,17 @@ contract Lend is ReentrancyGuard, Ownable {
     constructor(address _bank, uint256 _fee) public {
         bank = _bank;
         fee = _fee;
-    }
+    } 
+
 
     /**
     * @dev Borrows from bank on behalf of an arbitrageur, calls 'executeArbitrage' callback to return money. 
     */
-    function borrow(address token, uint256 amount) external nonReentrant isArbitrage(token, amount) returns (bool) {
+    function borrow(address token, address dest, uint256 amount, bytes data) external nonReentrant isArbitrage(token, amount) returns (bool) {
         // Borrow from the bank and send to the arbitrageur
         Bank(bank).borrowFor(token, msg.sender, amount);
         // Call the arbitrageur's execute arbitrage method.
-        return Arbitrage(msg.sender).executeArbitrage(token, amount);
+        return Arbitrage(msg.sender).executeArbitrage(token, dest, amount, data);
     }
 
 }
