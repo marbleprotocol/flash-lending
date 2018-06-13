@@ -1,15 +1,13 @@
 pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./interface/Arbitrage.sol";
 import "./Lend.sol";
 import "./Bank.sol";
-import "./Transfer.sol";
 import "./ExternalCall.sol";
 
-contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
+contract ArbitrageImpl is Arbitrage, ExternalCall {
     using SafeMath for *;
 
     address public lend;
@@ -17,6 +15,12 @@ contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
     address public tradeExecutor;
     uint256 public fee; 
     address constant public ETH = 0x0;
+
+
+    modifier fromLender () {
+        require(msg.sender == lend);
+        _;
+    }
 
     constructor(address _lend, address _tradeExecutor) public {
         lend = _lend;
@@ -34,8 +38,8 @@ contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
      * @param amount - Amount to borrow from bank
      * @param data - Order call data for external_call to execute
     */
-    function borrow(address token, uint256 amount, bytes data) external onlyOwner {
-        Lend(lend).borrow(token, amount, data);
+    function borrow(address token, address dest, uint256 amount, bytes data) external {
+        Lend(lend).borrow(token, dest, amount, data);
     }
 
     /* 
@@ -45,9 +49,7 @@ contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
     * @param amount - Amount to borrow from bank
     * @param data - Order call data for external_call to execute
     */
-    function executeArbitrage(address token, uint256 amount, bytes data) external payable returns (bool) {
-        require(msg.sender == lend);
-
+    function executeArbitrage(address token, address dest, uint256 amount, bytes data) external payable fromLender() returns (bool) {
         // Calls the trade executor
         external_call(tradeExecutor, amount, data.length, data);
 
@@ -58,8 +60,7 @@ contract ArbitrageImpl is Arbitrage, Ownable, Transfer, ExternalCall {
         } else {
             Bank(bank).repay(token, repayAmount); 
         }
+        dest.transfer(this.balance);
     }
 
-    // TODO: Allow owner to withdraw. 
-    
 }

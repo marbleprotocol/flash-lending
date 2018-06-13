@@ -15,6 +15,7 @@ import {
     zeroExTokenOrderData,
     zeroExEtherOrderData
 } from "./helpers/ZeroExUtils";
+import { getTxCost } from "./helpers/utils";
 import { deployZeroEx } from "./helpers/ZeroExUtils";
 import { MAX_UINT } from "./helpers/constants";
 import BigNumber from "bignumber.js";
@@ -38,6 +39,7 @@ contract("ArbitrageImpl", accounts => {
     const trader = accounts[1];
     const maker = accounts[2];
     const lender = accounts[3];
+    const dest = accounts[4];
 
     // Constants
     const DEPOSIT_AMOUNT = 100000;
@@ -45,18 +47,17 @@ contract("ArbitrageImpl", accounts => {
     const ARBITRAGE_AMOUNT = 50000;
     const MOCK_TOKEN_AMOUNT = 20000;
 
-    const FEE = 10 ** 15; // 10**15 / 10*18 = .1% fee
-    const ARB_PROFIT = 100;
-    const TRADE_AMOUNT = "1000";
-    const TRADE_AMOUNT_INT = parseInt(TRADE_AMOUNT); 
+    const FEE = 10 ** 15; // .1% fee (10**15 / 10*18)
+    const ARB_PROFIT = 1000;
+    const TRADE_AMOUNT = "10000";
+    const TRADE_AMOUNT_INT = parseInt(TRADE_AMOUNT);
 
     beforeEach(async () => {
+        const traderETHBefore = await web3Beta.eth.getBalance(trader);
         tradeExecutor = await TradeExecutor.new();
         bank = await Bank.new();
         lend = await Lend.new(bank.address, FEE);
-        arbitrage = await Arbitrage.new(lend.address, tradeExecutor.address, {
-            from: trader
-        });
+        arbitrage = await Arbitrage.new(lend.address, tradeExecutor.address);
 
         ({
             zeroExWrapper,
@@ -72,23 +73,14 @@ contract("ArbitrageImpl", accounts => {
             from: lender,
             value: DEPOSIT_AMOUNT
         });
+        await weth.deposit({
+            from: maker,
+            value: TRADE_AMOUNT_INT + ARB_PROFIT
+        });
     });
 
-    it("should execute 0x bytes", async () => {
-
+    const createOrderData = async () => {
         const tokenA = await MockToken.new([maker], [TRADE_AMOUNT_INT]);
-        await weth.deposit({ from: maker, value: TRADE_AMOUNT_INT + ARB_PROFIT });
-
-        let bankETHBefore = await web3Beta.eth.getBalance(bank.address);
-        console.log("BANK ETH BEFORE: ", bankETHBefore);
-
-        const makerWETHBefore = await weth.balanceOf(maker);
-        console.log("MAKER WETH BEFORE: ", makerWETHBefore.toNumber());
-
-        const traderETHBefore = await web3Beta.eth.getBalance(
-            arbitrage.address
-        );
-        console.log("ARB TRADER ETH BEFORE: ", traderETHBefore);
 
         //Approve the proxy to transfer tokens on behalf of the maker
         await weth.approve(tokenTransferProxy.address, MAX_UINT, {
@@ -132,25 +124,45 @@ contract("ArbitrageImpl", accounts => {
         const data = executor.methods
             .trade(wrappers, tokenA.address, trade1, trade2)
             .encodeABI();
+        return data;
+    };
 
-        const loanSize = TRADE_AMOUNT_INT; 
-        const feeAmount = (FEE * loanSize / (10**18));
+    it("should execute 0x bytes", async () => {
+        const bankETHBefore = await web3Beta.eth.getBalance(bank.address);
+        console.log("BANK ETH BEFORE: ", bankETHBefore);
+
+        const makerWETHBefore = await weth.balanceOf(maker);
+        console.log("MAKER WETH BEFORE: ", makerWETHBefore.toNumber());
+
+        const destETHBefore = await web3Beta.eth.getBalance(dest);
+        console.log("ARB TRADER ETH BEFORE: ", destETHBefore);
+
+        const data = await createOrderData();
+        const loanSize = TRADE_AMOUNT_INT;
+
+        await arbitrage.borrow(ETH, dest, loanSize, data, { from: trader });
+
+        const feeAmount = FEE * loanSize / 10 ** 18;
         console.log("LOAN SIZE:", loanSize);
         console.log("FEE AMOUNT:", feeAmount);
 
-        await arbitrage.borrow(ETH, loanSize, data, { from: trader });
-
-        const traderETHAfter = await web3Beta.eth.getBalance(arbitrage.address);
-        console.log("ARB TRADER ETH AFTER: ", traderETHAfter);
-        expect(parseInt(traderETHAfter)).to.equal(traderETHBefore + ARB_PROFIT - feeAmount); 
+        const destETHAfter = await web3Beta.eth.getBalance(dest);
+        console.log("ARB TRADER ETH AFTER: ", destETHAfter);
+        expect(parseInt(destETHAfter)).to.equal(
+            parseInt(destETHBefore) + ARB_PROFIT - feeAmount
+        );
 
         const makerWETHAfter = await weth.balanceOf(maker);
         console.log("MAKER WETH AFTER: ", makerWETHAfter.toNumber());
-        expect(makerWETHAfter.toNumber()).to.equal(makerWETHBefore - ARB_PROFIT); 
+        expect(makerWETHAfter.toNumber()).to.equal(
+            makerWETHBefore.toNumber() - ARB_PROFIT
+        );
 
         const bankETHAfter = await web3Beta.eth.getBalance(bank.address);
         console.log("BANK ETH AFTER: ", bankETHAfter);
 
-        expect(parseInt(bankETHAfter)).to.equal(parseInt(bankETHBefore) + feeAmount); 
+        expect(parseInt(bankETHAfter)).to.equal(
+            parseInt(bankETHBefore) + feeAmount
+        );
     });
 });
