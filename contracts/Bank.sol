@@ -27,7 +27,7 @@ contract Bank is Ownable, Transfer {
     /**
     * @dev Deposit tokens to the bank.
     */
-    function deposit(address token, uint256 amount) public payable {
+    function deposit(address token, uint256 amount) external payable {
         transferFrom(token, msg.sender, this, amount);
         deposits[token][msg.sender] = deposits[token][msg.sender].add(amount);
         totalDeposits[token] = totalDeposits[token].add(amount); 
