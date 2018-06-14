@@ -8,36 +8,49 @@ import "./interface/Arbitrage.sol";
 import "./Bank.sol";
 
 
-contract Lend is ReentrancyGuard, Ownable {
+contract FlashLender is ReentrancyGuard, Ownable {
     using SafeMath for *;
 
     address public bank;
     uint256 public fee;
     
     /**
-    * @dev Verifies that the borrowed tokens are returned by the end of execution.
+    * @dev Verify that the borrowed tokens are returned to the bank plus a fee by the end of transaction execution.
     */
     modifier isArbitrage(address token, uint256 amount) {
-        uint256 balanceBefore = Bank(bank).totalSupplyOf(token);
+        uint256 balance = Bank(bank).totalSupplyOf(token);
         _;
-        uint256 feePayment = amount.mul(fee).div(10**18); 
-        require(Bank(bank).totalSupplyOf(token) >= (balanceBefore.add(feePayment)));
+        uint256 feePayment = amount.mul(fee).div(10 ** 18); 
+        require(Bank(bank).totalSupplyOf(token) >= (balance.add(feePayment)));
     }
 
     constructor(address _bank, uint256 _fee) public {
         bank = _bank;
         fee = _fee;
-    } 
-
+    }
 
     /**
-    * @dev Borrows from bank on behalf of an arbitrageur, calls 'executeArbitrage' callback to return money. 
+    * @dev Borrow from the bank on behalf of an aribtrage contract and execute the arbitrage contract's callback function.
     */
     function borrow(address token, address dest, uint256 amount, bytes data) external nonReentrant isArbitrage(token, amount) returns (bool) {
-        // Borrow from the bank and send to the arbitrageur
+        // Borrow from the bank and send to the arbitrageur.
         Bank(bank).borrowFor(token, msg.sender, amount);
         // Call the arbitrageur's execute arbitrage method.
         return Arbitrage(msg.sender).executeArbitrage(token, dest, amount, data);
+    }
+
+    /**
+    * @dev Allow the owner to set the bank address.
+    */
+    function setBank(address _bank) external onlyOwner {
+        bank = _bank;
+    }
+
+    /**
+    * @dev Allow the owner to set the fee.
+    */
+    function setFee(uint256 _fee) external onlyOwner {
+        fee = _fee;
     }
 
 }

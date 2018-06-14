@@ -3,64 +3,84 @@ pragma solidity 0.4.24;
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./interface/Arbitrage.sol";
-import "./Lend.sol";
 import "./Bank.sol";
+import "./FlashLender.sol";
 import "./ExternalCall.sol";
 
 contract ArbitrageImpl is Arbitrage, ExternalCall {
     using SafeMath for *;
 
-    address public lend;
+    address public lender;
     address public bank;
     address public tradeExecutor;
-    uint256 public fee; 
     address constant public ETH = 0x0;
+    uint256 constant public MAX_UINT = uint(-1);
 
-
-    modifier fromLender () {
-        require(msg.sender == lend);
+    modifier onlyLender() {
+        require(msg.sender == lender);
         _;
     }
 
-    constructor(address _lend, address _tradeExecutor) public {
-        lend = _lend;
+    constructor(address _lender, address _bank, address _tradeExecutor) public {
+        lender = _lender;
+        bank = _bank;
         tradeExecutor = _tradeExecutor; 
-        bank = Lend(lend).bank();
-        fee = Lend(lend).fee();
     }
 
-    // Receive eth from bank
+    // Receive ETH from bank.
     function () payable public {}
 
-    /*
-     * @dev Borrow for atomic arbitrage. Entry point for Lend. 
-     * @param token - Token address to borrow from bank
-     * @param amount - Amount to borrow from bank
-     * @param data - Order call data for external_call to execute
+    /**
+    * @dev Borrow from flash lender to execute atomic arbitrage trade. 
+    * @param token Address of the token to borrow.
+    * @param amount Amount to borrow.
+    * @param data Calldata of the trades to execute on trade executor.
     */
-    function borrow(address token, address dest, uint256 amount, bytes data) external {
-        Lend(lend).borrow(token, dest, amount, data);
+    function submitTrade(address token, address dest, uint256 amount, bytes data) external {
+        FlashLender(lender).borrow(token, dest, amount, data);
     }
 
-    /* 
-    * @dev Called by Lend after it borrows money to this account from the Bank. 
-    * Executes the two trades passed in, then repays bank. This contract keeps the profit. 
-    * @param token - Token address to borrow from bank
-    * @param amount - Amount to borrow from bank
-    * @param data - Order call data for external_call to execute
+    /**
+    * @dev Callback from flash lender. Executes arbitrage trade.
+    * @param token Address of the borrowed token.
+    * @param amount Amount of borrowed tokens.
+    * @param data Calldata of the trades to execute on trade executor.
     */
-    function executeArbitrage(address token, address dest, uint256 amount, bytes data) external payable fromLender() returns (bool) {
-        // Calls the trade executor
-        external_call(tradeExecutor, amount, data.length, data);
+    function executeArbitrage(address token, address dest, uint256 amount, bytes data) external payable onlyLender returns (bool) {
+        uint256 value = 0;
+        if (token == ETH) {
+            value = amount;
+        }
 
-        uint256 repayAmount = amount.add(amount.mul(fee).div(10**18));
+        // Execute the trades.
+        external_call(tradeExecutor, value, data.length, data);
 
+        // Determine the amount to repay.
+        uint256 repayAmount = getRepayAmount(amount);
+
+        // Repay the bank and collect remaining profits.
         if (token == ETH) {
             Bank(bank).repay.value(repayAmount)(token, repayAmount);
+            dest.transfer(address(this).balance);
         } else {
-            Bank(bank).repay(token, repayAmount); 
+            if (ERC20(token).allowance(this, bank) < repayAmount) {
+                ERC20(token).approve(bank, MAX_UINT);
+            }
+            Bank(bank).repay(token, repayAmount);
+            uint256 balance = ERC20(token).balanceOf(this);
+            ERC20(token).transfer(dest, balance);
         }
-        dest.transfer(this.balance);
+
+        return true;
+    }
+
+    /** 
+    * @dev Calculate the amount owed after borrowing.
+    */ 
+    function getRepayAmount(uint256 amount) public view returns (uint256) {
+        uint256 fee = FlashLender(lender).fee();
+        uint256 feeAmount = amount.mul(fee).div(10 ** 18);
+        return amount.add(feeAmount);
     }
 
 }
