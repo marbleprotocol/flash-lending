@@ -309,4 +309,39 @@ contract EtherDelta is SafeMath {
     orderFills[msg.sender][hash] = amountGet;
     Cancel(tokenGet, amountGet, tokenGive, amountGive, expires, nonce, msg.sender, v, r, s);
   }
+
+    // ADDITIONAL HELPERS ADDED FOR TESTING
+    function hash(
+        address tokenGet,
+        uint amountGet,
+        address tokenGive,
+        uint amountGive,
+        uint expires,
+        uint nonce
+    )
+        public
+        view
+        returns (bytes32) 
+    {
+        return sha256(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
+    }
+
+    function isValidSignature(
+        bytes32 _hash,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        address signer
+    )
+        public
+        view
+        returns (bool) 
+    {
+        return signer == ecrecover(
+            sha3("\x19Ethereum Signed Message:\n32", _hash),
+            v,
+            r,
+            s
+        );
+    }
 }
