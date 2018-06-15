@@ -1,5 +1,7 @@
 # Arbitrage
 
+Smart contracts for executing arbitrage trades across Ethereum decentralized exchanges.
+
 ## Contracts
 
 Bank.sol: [0x13d56d8b85735e45fc983374de64A352b1d9a587](https://etherscan.io/address/0x13d56d8b85735e45fc983374de64A352b1d9a587)
