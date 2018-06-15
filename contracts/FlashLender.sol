@@ -4,8 +4,8 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./interface/Bank.sol";
 import "./interface/Arbitrage.sol";
-import "./Bank.sol";
 
 
 contract FlashLender is ReentrancyGuard, Ownable {
