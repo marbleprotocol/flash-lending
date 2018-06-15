@@ -148,7 +148,7 @@ contract AccountLevelsTest is AccountLevels {
   }
 }
 
-contract EtherDelta is SafeMath {
+contract EtherDeltaExchange is SafeMath {
   address public admin; //the admin address
   address public feeAccount; //the account that will receive fees
   address public accountLevelsAddr; //the address of the AccountLevels contract
