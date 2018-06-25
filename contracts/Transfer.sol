@@ -11,6 +11,7 @@ contract Transfer {
     * @dev Transfer tokens from this contract to an account.
     */
     function transfer(address token, address to, uint256 amount) internal returns (bool success) {
+        require(token == ETH && msg.value == amount || msg.value == 0);
         if (token == ETH) {
             to.transfer(amount);
         } else {
