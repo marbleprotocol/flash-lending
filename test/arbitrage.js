@@ -52,7 +52,7 @@ contract("ArbitrageImpl", accounts => {
     beforeEach(async () => {
         const traderETHBefore = await web3Beta.eth.getBalance(trader);
         tradeExecutor = await TradeExecutor.new();
-        bank = await Bank.new();
+        bank = await Bank.new({from:lender}); // lender is owner of the bank
         flashLender = await FlashLender.new(bank.address, FEE);
         arbitrage = await ArbitrageImpl.new(
             flashLender.address,
@@ -68,7 +68,7 @@ contract("ArbitrageImpl", accounts => {
         } = await deployZeroEx(web3Beta));
 
         // Approve the FlashLender contract as a bank borrower
-        await bank.addBorrower(flashLender.address);
+        await bank.addBorrower(flashLender.address, {from:lender});
 
         // Lender deposits Ether into the bank
         await bank.deposit(ETH, DEPOSIT_AMOUNT, {
