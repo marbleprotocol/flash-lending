@@ -22,10 +22,10 @@ contract("Bank", accounts => {
 
     beforeEach(async () => {
         bank = await Bank.new();
-        token = await Token.new(
-            [lender1, lender2, borrower],
-            [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT, PROFIT]
-        );
+        // token = await Token.new(
+        //     [lender1, lender2, borrower],
+        //     [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT, PROFIT]
+        // );
     });
 
     it("should deposit Ether", async () => {

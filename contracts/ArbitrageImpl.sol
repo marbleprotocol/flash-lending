@@ -3,7 +3,7 @@ pragma solidity 0.4.24;
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./interface/Arbitrage.sol";
-import "./interface/Bank.sol";
+import "./interface/BankInterface.sol";
 import "./FlashLender.sol";
 import "./ExternalCall.sol";
 
@@ -60,13 +60,13 @@ contract ArbitrageImpl is Arbitrage, ExternalCall {
 
         // Repay the bank and collect remaining profits.
         if (token == ETH) {
-            Bank(bank).repay.value(repayAmount)(token, repayAmount);
+            BankInterface(bank).repay.value(repayAmount)(token, repayAmount);
             dest.transfer(address(this).balance);
         } else {
             if (ERC20(token).allowance(this, bank) < repayAmount) {
                 ERC20(token).approve(bank, MAX_UINT);
             }
-            Bank(bank).repay(token, repayAmount);
+            BankInterface(bank).repay(token, repayAmount);
             uint256 balance = ERC20(token).balanceOf(this);
             ERC20(token).transfer(dest, balance);
         }
