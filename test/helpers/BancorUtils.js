@@ -151,7 +151,6 @@ export const deployBancor = async accounts => {
     ];
 
     bancorWrapper = await BancorWrapper.new(converter1.address);
-    await bancorWrapper.approve(smartToken1.address, converter1.address);
     return {
         etherToken,
         smartToken1,

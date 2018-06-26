@@ -51,22 +51,42 @@ contract("BancorWrapper", accounts => {
 
     it("converts Ether to tokens", async () => {
         const prevBalance = await smartToken1.balanceOf(trader);
-        await bancorWrapper.getTokens(smartToken1QuickBuyPath, 1, {
-            from: trader,
-            value: 10000
-        });
+        await bancorWrapper.getTokens(
+            converter1.address,
+            smartToken1QuickBuyPath,
+            1,
+            {
+                from: trader,
+                value: 10000
+            }
+        );
         const newBalance = await smartToken1.balanceOf(trader);
-        expect(Number(newBalance)).to.be.above(Number(prevBalance));
+        expect(newBalance.toNumber()).to.be.above(prevBalance.toNumber());
     });
 
     it("converts tokens to Ether", async () => {
         const tokenBalance = await smartToken1.balanceOf(trader);
-        await smartToken1.transfer(bancorWrapper.address, tokenBalance, { from: trader });
+        await smartToken1.transfer(
+            bancorWrapper.address,
+            tokenBalance,
+            {
+                from: trader
+            }
+        );
         const prevBalance = await web3.eth.getBalance(trader);
-        const result = await bancorWrapper.getEther(smartToken1QuickSellPath, 1, { from: trader });
+        const result = await bancorWrapper.getEther(
+            converter1.address,
+            smartToken1QuickSellPath,
+            1,
+            { from: trader }
+        );
         const transaction = web3.eth.getTransaction(result.tx);
-        const transactionCost = transaction.gasPrice.times(result.receipt.cumulativeGasUsed);
+        const transactionCost = transaction.gasPrice.times(
+            result.receipt.cumulativeGasUsed
+        );
         const newBalance = await web3.eth.getBalance(trader);
-        expect(Number(newBalance)).to.be.above(Number(prevBalance - Number(transactionCost)));
+        expect(newBalance.toNumber()).to.be.above(
+            prevBalance.toNumber() - transactionCost.toNumber()
+        );
     });
 });
