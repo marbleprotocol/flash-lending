@@ -46,16 +46,16 @@ export const createSignedOrder = async (web3, orderData) => {
     };
 };
 
-export const zeroExTokenOrderData = async (web3, wrapper, orderData) => {
-    const signedOrder = await createSignedOrder(web3, orderData);
+export const zeroExTokenOrderData = async (zeroEx, wrapper, orderData) => {
+    const signedOrder = await createSignedOrder(zeroEx, orderData);
     const sig = signedOrder.ecSignature;
     return wrapper.methods
         .getTokens(signedOrder.orderAddresses, signedOrder.orderValues, sig.v, sig.r, sig.s)
         .encodeABI();
 };
 
-export const zeroExEtherOrderData = async (web3, wrapper, orderData) => {
-    const signedOrder = await createSignedOrder(web3, orderData);
+export const zeroExEtherOrderData = async (zeroEx, wrapper, orderData) => {
+    const signedOrder = await createSignedOrder(zeroEx, orderData);
     const sig = signedOrder.ecSignature;
     return wrapper.methods
         .getEther(signedOrder.orderAddresses, signedOrder.orderValues, sig.v, sig.r, sig.s)
@@ -87,9 +87,7 @@ export const createZeroExOrder = async (
     return order;
 };
 
-export const signOrder = async (web3, order, maker) => {
-    const networkId = await web3.eth.net.getId();
-    const zeroEx = new ZeroEx(web3.currentProvider, { networkId: Number(networkId) });
+export const signOrder = async (zeroEx, order, maker) => {
     const orderHash = ZeroEx.getOrderHashHex(order);
     const ecSignature = await zeroEx.signOrderHashAsync(orderHash, maker);
     const signedOrder = {

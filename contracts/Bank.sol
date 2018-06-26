@@ -8,12 +8,6 @@ import "./Transfer.sol";
 contract Bank is Ownable, Transfer {
     using SafeMath for *;
 
-    // Token => Account => Deposit
-    mapping (address => mapping (address => uint256)) public deposits;
-
-    // Token => Total Deposits
-    mapping (address => uint256) public totalDeposits;
-
     // Lender => Approved
     mapping (address => bool) public approved;
 
@@ -29,22 +23,12 @@ contract Bank is Ownable, Transfer {
     */
     function deposit(address token, uint256 amount) external onlyOwner payable {
         transferFrom(token, msg.sender, this, amount);
-        deposits[token][msg.sender] = deposits[token][msg.sender].add(amount);
-        totalDeposits[token] = totalDeposits[token].add(amount); 
     }
 
     /**
     * @dev Withdraw tokens from the bank.
     */
-    function withdraw(address token, uint256 amount) external {
-        require(balanceOf(token, msg.sender) >= amount);
-
-        uint256 totalDeposit = totalDeposits[token];
-        uint256 totalSupply = totalSupplyOf(token);
-        uint256 principal = amount.mul(totalDeposit).div(totalSupply);
-        deposits[token][msg.sender] = deposits[token][msg.sender].sub(principal);
-        
-        // Transfer tokens to the withdrawer
+    function withdraw(address token, uint256 amount) external onlyOwner {
         transfer(token, msg.sender, amount);
     }
 
@@ -92,17 +76,6 @@ contract Bank is Ownable, Transfer {
         } else {
             return ERC20(token).balanceOf(this); 
         }
-    }
-
-    /**
-    * @dev Gets balance of a specific account.
-    * @notice Accounts have a proportional claim to any interest earned by the bank.
-    */
-    function balanceOf(address token, address who) public view returns (uint256 balance) {
-        uint256 totalSupply = totalSupplyOf(token);
-        uint256 deposit = deposits[token][who];
-        uint256 totalDeposit = totalDeposits[token];
-        return deposit.mul(totalSupply).div(totalDeposit);
     }
 
 }
