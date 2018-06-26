@@ -61,18 +61,14 @@ contract("BancorWrapper", accounts => {
             }
         );
         const newBalance = await smartToken1.balanceOf(trader);
-        expect(newBalance.toNumber()).to.be.above(prevBalance.toNumber());
+        expect(newBalance.gt(prevBalance)).to.equal(true);
     });
 
     it("converts tokens to Ether", async () => {
         const tokenBalance = await smartToken1.balanceOf(trader);
-        await smartToken1.transfer(
-            bancorWrapper.address,
-            tokenBalance,
-            {
-                from: trader
-            }
-        );
+        await smartToken1.transfer(bancorWrapper.address, tokenBalance, {
+            from: trader
+        });
         const prevBalance = await web3.eth.getBalance(trader);
         const result = await bancorWrapper.getEther(
             converter1.address,
@@ -85,8 +81,8 @@ contract("BancorWrapper", accounts => {
             result.receipt.cumulativeGasUsed
         );
         const newBalance = await web3.eth.getBalance(trader);
-        expect(newBalance.toNumber()).to.be.above(
-            prevBalance.toNumber() - transactionCost.toNumber()
-        );
+        expect(
+            newBalance.gt(prevBalance.sub(transactionCost))
+        ).to.equal(true);
     });
 });

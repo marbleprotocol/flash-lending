@@ -28,7 +28,7 @@ contract Bank is Ownable, Transfer {
     /**
     * @dev Withdraw tokens from the bank.
     */
-    function withdraw(address token, uint256 amount) onlyOwner external {
+    function withdraw(address token, uint256 amount) external onlyOwner {
         transfer(token, msg.sender, amount);
     }
 
