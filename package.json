@@ -7,11 +7,10 @@
     "test": "test"
   },
   "scripts": {
-    "ganache": "ganache-cli -l 100000000 -e 100 -i 50 -s \"trove\"",
+    "chain": "ganache-cli -l 100000000 -e 100 -i 50",
     "lint": "solhint contracts/**/*.sol",
     "test": "truffle test",
     "profile": "node scripts/profiler.js",
-    "arbitrage": "truffle exec --network mainnet \"scripts/arbitrage.js\"",
     "flatten": "truffle-flattener"
   },
   "author": "",
