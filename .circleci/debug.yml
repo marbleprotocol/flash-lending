@@ -36,5 +36,3 @@ jobs:
       - run: 
           name: Running tests
           command: npm run test
-
-
