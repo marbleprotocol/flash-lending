@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "chain": "ganache-cli -l 100000000 -e 100 -i 50",
+    "chain": "ganache-cli -p 8545 -i 50 -l 100000000 -e 100",
     "lint": "solhint contracts/**/*.sol",
     "test": "truffle test",
     "profile": "node scripts/profiler.js",
