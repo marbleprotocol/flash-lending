@@ -17,7 +17,6 @@ jobs:
           - v1-dependencies-
 
       - run: npm install
-      - run: ls
 
       # - save_cache:
       #     paths:
