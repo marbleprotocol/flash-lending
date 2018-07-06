@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/marbleprotocol/arbitrage.svg?style=shield&circle-token=893b30036bd6dd14c607ab989992982b9bd1e0a0)](https://circleci.com/gh/marbleprotocol/arbitrage)
+
 # Arbitrage
 
 Smart contracts for executing arbitrage trades across Ethereum decentralized exchanges.
