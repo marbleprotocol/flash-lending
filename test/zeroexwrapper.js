@@ -1,14 +1,10 @@
 const Token = artifacts.require("MockToken");
+import Web3 from "web3";
+import BigNumber from "bignumber.js";
 import { ZeroEx } from "0x.js";
-import {
-    deployZeroEx,
-    createZeroExOrder,
-    getValues,
-    getAddresses,
-    signOrder
-} from "./helpers/ZeroExUtils";
+import { deployZeroEx, createZeroExOrder, getValues, getAddresses, signOrder } from "./helpers/ZeroExUtils";
+import { getTxCost } from "./helpers/utils";
 
-const Web3 = require("web3");
 const web3Beta = new Web3(web3.currentProvider);
 
 contract("ZeroExWrapper", accounts => {
@@ -19,9 +15,7 @@ contract("ZeroExWrapper", accounts => {
     let zeroExWrapper, exchange, tokenTransferProxy, weth, token, zeroEx;
 
     beforeEach(async () => {
-        ({ zeroExWrapper, exchange, tokenTransferProxy, weth, zeroEx } = await deployZeroEx(
-            web3Beta
-        ));
+        ({ zeroExWrapper, exchange, tokenTransferProxy, weth, zeroEx } = await deployZeroEx(web3Beta));
     });
 
     it("should have the correct owner", async () => {
@@ -47,27 +41,24 @@ contract("ZeroExWrapper", accounts => {
             to: zeroExWrapper.address,
             value: value
         });
-        const zeroExWrapperBalanceBefore = await web3Beta.eth.getBalance(
-            zeroExWrapper.address
-        );
+        const zeroExWrapperBalanceBefore = await web3Beta.eth.getBalance(zeroExWrapper.address);
         expect(Number(zeroExWrapperBalanceBefore)).to.equal(Number(value));
 
         const accountBalanceBefore = await web3Beta.eth.getBalance(taker);
 
         const result = await zeroExWrapper.withdraw();
-        const zeroExWrapperBalanceAfter = await web3Beta.eth.getBalance(
-            zeroExWrapper.address
-        );
+        const zeroExWrapperBalanceAfter = await web3Beta.eth.getBalance(zeroExWrapper.address);
         expect(Number(zeroExWrapperBalanceAfter)).to.equal(0);
 
+        const txCost = await getTxCost(web3Beta, result);
         const accountBalanceAfter = await web3Beta.eth.getBalance(taker);
-        expect(Number(accountBalanceAfter)).to.equal(
-            Number(accountBalanceBefore) + Number(value) - Number(result.receipt.gasUsed)
-        );
-    });
-
-    it("should allow the owner to withdraw tokens", async () => {
-        // TODO:
+        expect(
+            BigNumber(accountBalanceAfter)
+                .minus(BigNumber(accountBalanceBefore))
+                .minus(BigNumber(value))
+                .plus(BigNumber(txCost))
+                .toNumber()
+        ).to.equal(0);
     });
 
     it("should execute a trade for tokens", async () => {
@@ -151,11 +142,15 @@ contract("ZeroExWrapper", accounts => {
         const result = await zeroExWrapper.getEther(addresses, values, sig.v, sig.r, sig.s, {
             from: taker
         });
-
+        const txCost = await getTxCost(web3Beta, result);
         const takerETHAfter = await web3Beta.eth.getBalance(taker);
-        expect(Number(takerETHAfter)).to.equal(
-            Number(takerETHBefore) + makerAmount - result.receipt.gasUsed
-        );
+        expect(
+            BigNumber(takerETHAfter)
+                .minus(BigNumber(takerETHBefore))
+                .minus(BigNumber(makerAmount))
+                .plus(BigNumber(txCost))
+                .toNumber()
+        ).to.equal(0);
 
         const makerTokenAfter = await token.balanceOf(maker);
         expect(Number(makerTokenAfter)).to.equal(takerAmount);

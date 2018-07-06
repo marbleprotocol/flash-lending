@@ -1,4 +1,8 @@
+import Web3 from "web3";
+import BigNumber from "bignumber.js";
 import { deployBancor } from "./helpers/BancorUtils";
+
+const web3Beta = new Web3(web3.currentProvider);
 
 let etherToken,
     smartToken1,
@@ -51,17 +55,12 @@ contract("BancorWrapper", accounts => {
 
     it("converts Ether to tokens", async () => {
         const prevBalance = await smartToken1.balanceOf(trader);
-        await bancorWrapper.getTokens(
-            converter1.address,
-            smartToken1QuickBuyPath,
-            1,
-            {
-                from: trader,
-                value: 10000
-            }
-        );
+        await bancorWrapper.getTokens(converter1.address, smartToken1QuickBuyPath, 1, {
+            from: trader,
+            value: 10000
+        });
         const newBalance = await smartToken1.balanceOf(trader);
-        expect(newBalance.gt(prevBalance)).to.equal(true);
+        expect(BigNumber(newBalance).gt(prevBalance)).to.equal(true);
     });
 
     it("converts tokens to Ether", async () => {
@@ -69,20 +68,11 @@ contract("BancorWrapper", accounts => {
         await smartToken1.transfer(bancorWrapper.address, tokenBalance, {
             from: trader
         });
-        const prevBalance = await web3.eth.getBalance(trader);
-        const result = await bancorWrapper.getEther(
-            converter1.address,
-            smartToken1QuickSellPath,
-            1,
-            { from: trader }
-        );
-        const transaction = web3.eth.getTransaction(result.tx);
-        const transactionCost = transaction.gasPrice.times(
-            result.receipt.cumulativeGasUsed
-        );
-        const newBalance = await web3.eth.getBalance(trader);
-        expect(
-            newBalance.gt(prevBalance.sub(transactionCost))
-        ).to.equal(true);
+        const prevBalance = await web3Beta.eth.getBalance(trader);
+        const result = await bancorWrapper.getEther(converter1.address, smartToken1QuickSellPath, 1, { from: trader });
+        const transaction = await web3Beta.eth.getTransaction(result.tx);
+        const transactionCost = BigNumber(transaction.gasPrice).times(BigNumber(result.receipt.cumulativeGasUsed));
+        const newBalance = await web3Beta.eth.getBalance(trader);
+        expect(BigNumber(newBalance).gt(BigNumber(prevBalance).minus(transactionCost))).to.equal(true);
     });
 });

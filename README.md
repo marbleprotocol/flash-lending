@@ -2,6 +2,18 @@
 
 Smart contracts for executing arbitrage trades across Ethereum decentralized exchanges.
 
+## Testing
+
+In a separate terminal tab, launch a local blockchain with Ganache.
+```
+npm run chain
+```
+
+Run the tests.
+```
+npm run test
+```
+
 ## Contracts
 
 Bank.sol: [0x13d56d8b85735e45fc983374de64A352b1d9a587](https://etherscan.io/address/0x13d56d8b85735e45fc983374de64A352b1d9a587)

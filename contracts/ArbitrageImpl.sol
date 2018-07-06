@@ -8,13 +8,13 @@ import "./FlashLender.sol";
 import "./ExternalCall.sol";
 
 contract ArbitrageImpl is Arbitrage, ExternalCall {
-    using SafeMath for *;
+    using SafeMath for uint256;
 
     address public lender;
     address public bank;
     address public tradeExecutor;
     address constant public ETH = 0x0;
-    uint256 constant public MAX_UINT = uint(-1);
+    uint256 constant public MAX_UINT = 2 ** 256 - 1;
 
     modifier onlyLender() {
         require(msg.sender == lender);
@@ -68,7 +68,7 @@ contract ArbitrageImpl is Arbitrage, ExternalCall {
             }
             BankInterface(bank).repay(token, repayAmount);
             uint256 balance = ERC20(token).balanceOf(this);
-            ERC20(token).transfer(dest, balance);
+            require(ERC20(token).transfer(dest, balance));
         }
 
         return true;
