@@ -6,7 +6,7 @@ import "./Transfer.sol";
 
 
 contract Bank is Ownable, Transfer {
-    using SafeMath for *;
+    using SafeMath for uint256;
 
     // Lender => Approved
     mapping (address => bool) public approved;

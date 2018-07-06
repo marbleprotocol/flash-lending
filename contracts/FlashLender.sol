@@ -9,7 +9,7 @@ import "./interface/Arbitrage.sol";
 
 
 contract FlashLender is ReentrancyGuard, Ownable {
-    using SafeMath for *;
+    using SafeMath for uint256;
 
     address public bank;
     uint256 public fee;
