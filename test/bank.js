@@ -2,7 +2,11 @@ const Bank = artifacts.require("Bank");
 const Token = artifacts.require("MockToken");
 const chai = require("chai"),
     expect = chai.expect;
+import Web3 from "web3";
+import BigNumber from "bignumber.js";
 import { getTxCost } from "./helpers/utils";
+
+const web3Beta = new Web3(web3.currentProvider);
 
 contract("Bank", accounts => {
     // Contracts
@@ -20,35 +24,32 @@ contract("Bank", accounts => {
     const PROFIT = 100;
 
     beforeEach(async () => {
-        bank = await Bank.new({from:lender}); // lender is owner
-        token = await Token.new(
-            [lender, borrower],
-            [DEPOSIT_AMOUNT, PROFIT],
-        );
+        bank = await Bank.new({ from: lender }); // lender is owner
+        token = await Token.new([lender, borrower], [DEPOSIT_AMOUNT, PROFIT]);
     });
 
     it("should deposit Ether", async () => {
-        const bal = await web3.eth.getBalance(lender);
+        const bal = await web3Beta.eth.getBalance(lender);
         await bank.deposit(ETH, DEPOSIT_AMOUNT, {
             from: lender,
             value: DEPOSIT_AMOUNT
         });
 
-        const bankBalance = await web3.eth.getBalance(bank.address);
-        expect(bankBalance.toNumber()).to.equal(DEPOSIT_AMOUNT);
+        const bankBalance = await web3Beta.eth.getBalance(bank.address);
+        expect(Number(bankBalance)).to.equal(DEPOSIT_AMOUNT);
     });
 
     it("should deposit tokens", async () => {
         const prevBalance = await token.balanceOf(lender);
-        expect(prevBalance.toNumber()).to.equal(DEPOSIT_AMOUNT);
+        expect(Number(prevBalance)).to.equal(DEPOSIT_AMOUNT);
 
         await bank.deposit(token.address, DEPOSIT_AMOUNT, { from: lender });
 
         const newBalance = await token.balanceOf(lender);
-        expect(newBalance.toNumber()).to.equal(0);
+        expect(Number(newBalance)).to.equal(0);
 
         const bankBalance = await token.balanceOf(bank.address);
-        expect(bankBalance.toNumber()).to.equal(DEPOSIT_AMOUNT);
+        expect(Number(bankBalance)).to.equal(DEPOSIT_AMOUNT);
     });
 
     it("should withdraw Ether", async () => {
@@ -57,25 +58,23 @@ contract("Bank", accounts => {
             value: DEPOSIT_AMOUNT
         });
 
-        const prevLenderBalance = await web3.eth.getBalance(lender);
+        const prevLenderBalance = await web3Beta.eth.getBalance(lender);
         const result = await bank.withdraw(ETH, WITHDRAW_AMOUNT, {
             from: lender
         });
 
-        const txCost = await getTxCost(web3, result);
+        const txCost = await getTxCost(web3Beta, result);
 
-        const newLenderBalance = await web3.eth.getBalance(lender);
-        expect(newLenderBalance.toNumber()).to.equal(
-            prevLenderBalance
+        const newLenderBalance = await web3Beta.eth.getBalance(lender);
+        expect(Number(newLenderBalance)).to.equal(
+            BigNumber(prevLenderBalance)
                 .plus(WITHDRAW_AMOUNT)
                 .minus(txCost)
                 .toNumber()
         );
 
-        const bankBalance = await web3.eth.getBalance(bank.address);
-        expect(bankBalance.toNumber()).to.equal(
-            DEPOSIT_AMOUNT - WITHDRAW_AMOUNT
-        );
+        const bankBalance = await web3Beta.eth.getBalance(bank.address);
+        expect(Number(bankBalance)).to.equal(DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
     });
 
     it("should withdraw tokens", async () => {
@@ -83,7 +82,7 @@ contract("Bank", accounts => {
         await bank.withdraw(token.address, WITHDRAW_AMOUNT, { from: lender });
 
         const balance = await token.balanceOf(bank.address);
-        expect(balance.toNumber()).to.equal(DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
+        expect(Number(balance)).to.equal(DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
     });
 
     // Deposit from both lenders and simulate an arbitrage profit
@@ -102,32 +101,35 @@ contract("Bank", accounts => {
         });
     };
 
-    it("should calculate correct bank balance with Ether", async () =>{
-        await bank.deposit(ETH, DEPOSIT_AMOUNT, { from: lender , value: DEPOSIT_AMOUNT});
-        const bankBalance = await bank.totalSupplyOf(ETH); 
+    it("should calculate correct bank balance with Ether", async () => {
+        await bank.deposit(ETH, DEPOSIT_AMOUNT, { from: lender, value: DEPOSIT_AMOUNT });
+        const bankBalance = await bank.totalSupplyOf(ETH);
         expect(bankBalance.toNumber()).to.equal(DEPOSIT_AMOUNT);
-    }); 
+    });
 
-    it("should calculate correct bank balance with Tokens", async () =>{
+    it("should calculate correct bank balance with Tokens", async () => {
         await bank.deposit(token.address, DEPOSIT_AMOUNT, { from: lender });
-        const bankBalance = await bank.totalSupplyOf(token.address); 
+        const bankBalance = await bank.totalSupplyOf(token.address);
         expect(bankBalance.toNumber()).to.equal(DEPOSIT_AMOUNT);
-    }); 
+    });
 
     it("should withdraw profits in ETH", async () => {
         await depositAndProfit(ETH);
-        const prevBalance = web3.eth.getBalance(lender);
+        const prevBalance = await web3Beta.eth.getBalance(lender);
 
         // withdraws entire balance
         const result = await bank.withdraw(ETH, DEPOSIT_AMOUNT, {
             from: lender
         });
-        const txCost = await getTxCost(web3, result);
-        const newBalance = web3.eth.getBalance(lender);
+        const txCost = await getTxCost(web3Beta, result);
+        const newBalance = await web3Beta.eth.getBalance(lender);
 
         // Lender 1 should get half of the profits since she owns half of the deposits
-        expect(newBalance.toNumber()).to.equal(
-            prevBalance.plus(DEPOSIT_AMOUNT + PROFIT / 2).minus(txCost).toNumber()
+        expect(Number(newBalance)).to.equal(
+            BigNumber(prevBalance)
+                .plus(DEPOSIT_AMOUNT + PROFIT / 2)
+                .minus(txCost)
+                .toNumber()
         );
     });
 

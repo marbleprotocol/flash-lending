@@ -25,6 +25,7 @@ contract("TradeExecutor", accounts => {
     let smartToken1QuickSellPath;
 
     // 0x
+    let zeroEx;
     let weth;
     let exchange;
     let tokenTransferProxy;
@@ -42,7 +43,7 @@ contract("TradeExecutor", accounts => {
             smartToken1QuickBuyPath,
             smartToken1QuickSellPath
         } = await deployBancor(accounts));
-        ({ zeroExWrapper, exchange, weth, tokenTransferProxy } = await deployZeroEx(web3Beta));
+        ({ zeroExWrapper, zeroEx, exchange, weth, tokenTransferProxy } = await deployZeroEx(web3Beta));
     });
 
     it("should trade Bancor", async () => {
@@ -76,7 +77,7 @@ contract("TradeExecutor", accounts => {
         await weth.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
         await tokenA.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
 
-        const zeroEx = new web3Beta.eth.Contract(zeroExWrapper.abi, zeroExWrapper.address);
+        const zeroExWrapperContract = new web3Beta.eth.Contract(zeroExWrapper.abi, zeroExWrapper.address);
         const tradeData1 = {
             exchange: exchange.address,
             maker: maker,
@@ -85,7 +86,7 @@ contract("TradeExecutor", accounts => {
             makerAmount: "1000",
             takerAmount: "800"
         };
-        const trade1 = await zeroExTokenOrderData(web3Beta, zeroEx, tradeData1);
+        const trade1 = await zeroExTokenOrderData(zeroEx, zeroExWrapperContract, tradeData1);
 
         const tradeData2 = {
             exchange: exchange.address,
@@ -95,7 +96,7 @@ contract("TradeExecutor", accounts => {
             makerAmount: "1000",
             takerAmount: "1000"
         };
-        const trade2 = await zeroExEtherOrderData(web3Beta, zeroEx, tradeData2);
+        const trade2 = await zeroExEtherOrderData(zeroEx, zeroExWrapperContract, tradeData2);
 
         const prevBalance = await web3Beta.eth.getBalance(trader);
 
@@ -109,6 +110,11 @@ contract("TradeExecutor", accounts => {
 
         const newBalance = await web3Beta.eth.getBalance(trader);
         const txCost = await getTxCost(web3Beta, result);
-        expect(newBalance).to.equal(BigNumber(prevBalance).minus(txCost).plus(200).toString());
+        expect(newBalance).to.equal(
+            BigNumber(prevBalance)
+                .minus(txCost)
+                .plus(200)
+                .toString()
+        );
     });
 });
