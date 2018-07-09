@@ -1,6 +1,6 @@
 pragma solidity 0.4.24;
 
-import "../Withdrawable.sol";
+import "./Withdrawable.sol";
 
 
 contract ExchangeWrapper is Withdrawable {

@@ -1,7 +1,7 @@
 const TradeExecutor = artifacts.require("TradeExecutor");
 const Bank = artifacts.require("Bank");
 const FlashLender = artifacts.require("FlashLender");
-const ArbitrageImpl = artifacts.require("ArbitrageImpl");
+const Arbitrage = artifacts.require("Arbitrage");
 const MockToken = artifacts.require("MockToken");
 const chai = require("chai");
 const expect = chai.expect;
@@ -20,7 +20,7 @@ import { deployZeroEx } from "./helpers/ZeroExUtils";
 import { MAX_UINT } from "./helpers/constants";
 import BigNumber from "bignumber.js";
 
-contract("ArbitrageImpl", accounts => {
+contract("Arbitrage", accounts => {
     // Contracts
     let bank;
     let flashLender;
@@ -55,7 +55,7 @@ contract("ArbitrageImpl", accounts => {
         tradeExecutor = await TradeExecutor.new();
         bank = await Bank.new({ from: lender }); // lender is owner of the bank
         flashLender = await FlashLender.new(bank.address, FEE);
-        arbitrage = await ArbitrageImpl.new(
+        arbitrage = await Arbitrage.new(
             flashLender.address,
             bank.address,
             tradeExecutor.address
@@ -156,7 +156,7 @@ contract("ArbitrageImpl", accounts => {
         const makerWETHBefore = await weth.balanceOf(maker);
 
         const data = await tradeExecutorData();
-        await arbitrage.submitTrade(ETH, dest, TRADE_AMOUNT, data, {
+        await arbitrage.submitTrade(ETH, TRADE_AMOUNT, dest, data, {
             from: trader
         });
 

@@ -1,8 +1,8 @@
 pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "../interface/WETH.sol";
-import "../interface/ZeroEx.sol";
+import "../DEX/WETH.sol";
+import "../DEX/ZeroEx.sol";
 import "./ExchangeWrapper.sol";
 import "../Transfer.sol";
 

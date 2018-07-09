@@ -4,6 +4,10 @@
 
 Programmatically borrow Ether to make arbitrage trades on decentralized exchanges.
 
+## How
+
+See [Arbitrage.sol](contracts/example/Arbitrage.sol) and its associated [test](test/arbitrage.js) for an example.
+
 ## Testing
 
 In a separate terminal tab, run a local blockchain with [Ganache](https://github.com/trufflesuite/ganache-cli).

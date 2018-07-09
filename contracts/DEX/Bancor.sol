@@ -1,3 +1,5 @@
+pragma solidity 0.4.24;
+
 /*
     ERC20 Standard Token interface
 */
