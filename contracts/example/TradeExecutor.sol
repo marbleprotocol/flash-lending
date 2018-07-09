@@ -1,6 +1,6 @@
 pragma solidity 0.4.24;
 
-import "./Withdrawable.sol";
+import "../proxy/Withdrawable.sol";
 import "./ExternalCall.sol";
 
 contract TradeExecutor is Withdrawable, ExternalCall {

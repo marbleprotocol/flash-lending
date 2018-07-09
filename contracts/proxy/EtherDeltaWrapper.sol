@@ -2,7 +2,7 @@ pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./ExchangeWrapper.sol";
-import "../interface/EtherDelta.sol";
+import "../DEX/EtherDelta.sol";
 import "../Transfer.sol";
 
 contract EtherDeltaWrapper is ExchangeWrapper, Transfer {
