@@ -1,12 +1,12 @@
 [![CircleCI](https://circleci.com/gh/marbleprotocol/arbitrage.svg?style=shield&circle-token=893b30036bd6dd14c607ab989992982b9bd1e0a0)](https://circleci.com/gh/marbleprotocol/arbitrage)
 
-# Arbitrage
+# ⚡️ Flash Lending
 
-Smart contracts for executing arbitrage trades across Ethereum decentralized exchanges.
+Programmatically borrow Ether to make arbitrage trades on decentralized exchanges.
 
 ## Testing
 
-In a separate terminal tab, launch a local blockchain with Ganache.
+In a separate terminal tab, run a local blockchain with [Ganache](https://github.com/trufflesuite/ganache-cli).
 ```
 npm run chain
 ```
