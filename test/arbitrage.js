@@ -150,6 +150,12 @@ contract("ArbitrageImpl", accounts => {
         expect(repayAmount.toNumber()).to.equal(1001);
     });
 
+
+    it("execute arbitrage should fail if not called by lender", async() => {
+        const data = await tradeExecutorData();
+        expect(arbitrage.executeArbitrage(ETH, dest, TRADE_AMOUNT, data,{from: trader})).to.be.rejectedWith("revert");
+    });
+
     it("should execute a 0x trade", async () => {
         const bankETHBefore = await web3Beta.eth.getBalance(bank.address);
         const destETHBefore = await web3Beta.eth.getBalance(dest);

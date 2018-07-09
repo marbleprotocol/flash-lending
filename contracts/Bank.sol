@@ -14,7 +14,7 @@ contract Bank is Ownable, Transfer {
     address constant public ETH = 0x0;
 
     modifier onlyApproved() {
-        require(approved[msg.sender] == true);
+        require(approved[msg.sender] == true, "Function can only be called by approved borrowers");
         _;
     }
 

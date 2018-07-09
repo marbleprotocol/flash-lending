@@ -17,7 +17,7 @@ contract ArbitrageImpl is Arbitrage, ExternalCall {
     uint256 constant public MAX_UINT = 2 ** 256 - 1;
 
     modifier onlyLender() {
-        require(msg.sender == lender);
+        require(msg.sender == lender, "Function can only be called by Lender");
         _;
     }
 
@@ -68,7 +68,7 @@ contract ArbitrageImpl is Arbitrage, ExternalCall {
             }
             BankInterface(bank).repay(token, repayAmount);
             uint256 balance = ERC20(token).balanceOf(this);
-            require(ERC20(token).transfer(dest, balance));
+            require(ERC20(token).transfer(dest, balance), "Token transfer to dest failed");
         }
 
         return true;

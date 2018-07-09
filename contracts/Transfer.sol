@@ -14,7 +14,7 @@ contract Transfer {
         if (token == ETH) {
             to.transfer(amount);
         } else {
-            require(ERC20(token).transfer(to, amount));
+            require(ERC20(token).transfer(to, amount), "Transfer failed");
         }
         return true;
     }
@@ -31,11 +31,11 @@ contract Transfer {
         internal
         returns (bool success)
     {
-        require(token == ETH && msg.value == amount || msg.value == 0);
+        require(token == ETH && msg.value == amount || msg.value == 0, "Msg.value should only equal transfer amount if transferring ETH");
 
         if (token != ETH) {
             // Remember to approve first
-            require(ERC20(token).transferFrom(from, to, amount));
+            require(ERC20(token).transferFrom(from, to, amount), "TransferFrom failed");
         }
         return true;
     }
