@@ -4,6 +4,10 @@
 
 Smart contracts for executing arbitrage trades across Ethereum decentralized exchanges.
 
+## How
+
+See [Arbitrage.sol](contracts/example/Arbitrage.sol) and its associated [test](test/arbitrage.js) for an example.
+
 ## Testing
 
 In a separate terminal tab, launch a local blockchain with Ganache.
