@@ -1,7 +1,7 @@
 pragma solidity 0.4.24;
 
 import "./ExchangeWrapper.sol";
-import "../interface/Kyber.sol";
+import "../DEX/Kyber.sol";
 
 contract KyberWrapper is ExchangeWrapper {
 

@@ -8,7 +8,7 @@ import "./Transfer.sol";
 contract Bank is Ownable, Transfer {
     using SafeMath for uint256;
 
-    // Lender => Approved
+    // Borrower => Approved
     mapping (address => bool) public approved;
 
     address constant public ETH = 0x0;

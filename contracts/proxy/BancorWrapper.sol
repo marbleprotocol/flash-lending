@@ -1,7 +1,7 @@
 pragma solidity 0.4.24;
 
-import "../Withdrawable.sol";
-import "../interface/Bancor.sol";
+import "./Withdrawable.sol";
+import "../DEX/Bancor.sol";
 
 contract BancorWrapper is Withdrawable {
 
