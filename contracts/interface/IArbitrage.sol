@@ -9,6 +9,5 @@ interface IArbitrage {
       bytes data
     )
       external
-      payable
       returns (bool);
 }
