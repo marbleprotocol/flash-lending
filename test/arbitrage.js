@@ -11,10 +11,7 @@ chai.use(chaiAsPromised);
 const Web3 = require("web3");
 const web3Beta = new Web3(web3.currentProvider);
 
-import {
-    zeroExTokenOrderData,
-    zeroExEtherOrderData
-} from "./helpers/ZeroExUtils";
+import { ZeroExUtils } from "./helpers/ZeroExUtils";
 import { getTxCost } from "./helpers/utils";
 import { deployZeroEx } from "./helpers/ZeroExUtils";
 import { MAX_UINT } from "./helpers/constants";
@@ -29,6 +26,7 @@ contract("Arbitrage", accounts => {
     let tradeExecutor;
 
     // 0x
+    let zeroExUtils;
     let zeroExWrapper;
     let zeroExWrapperContract; // web3 version of wrapper (not truffle-contract)
     let zeroEx;
@@ -47,7 +45,7 @@ contract("Arbitrage", accounts => {
     const ETH = "0x0000000000000000000000000000000000000000";
 
     const FEE = 10 ** 15; // .1% fee (10 ** 15 / 10*18)
-    const ARB_PROFIT = 2000;
+    const PROFIT = 2000;
     const TRADE_AMOUNT = 10000;
 
     beforeEach(async () => {
@@ -55,18 +53,12 @@ contract("Arbitrage", accounts => {
         tradeExecutor = await TradeExecutor.new();
         bank = await Bank.new({ from: lender }); // lender is owner of the bank
         flashLender = await FlashLender.new(bank.address, FEE);
-        arbitrage = await Arbitrage.new(
-            flashLender.address,
-            tradeExecutor.address
-        );
+        arbitrage = await Arbitrage.new(flashLender.address, tradeExecutor.address);
 
-        ({
-            zeroExWrapper,
-            exchange,
-            weth,
-            tokenTransferProxy,
-            zeroEx
-        } = await deployZeroEx(web3Beta));
+        zeroExUtils = new ZeroExUtils(web3Beta);
+        await zeroExUtils.init();
+
+        ({ zeroExWrapper, exchange, weth, tokenTransferProxy, zeroEx } = zeroExUtils);
 
         // Approve the FlashLender contract as a bank borrower
         await bank.addBorrower(flashLender.address, { from: lender });
@@ -93,29 +85,22 @@ contract("Arbitrage", accounts => {
             from: maker
         });
 
-        zeroExWrapperContract = new web3Beta.eth.Contract(
-            zeroExWrapper.abi,
-            zeroExWrapper.address
-        );
+        zeroExWrapperContract = new web3Beta.eth.Contract(zeroExWrapper.abi, zeroExWrapper.address);
     });
 
     // Calldata to give to Arbitrage.
     // This will be used in the executeArbitrage callback from FlashLender.
     const tradeExecutorData = async () => {
-        const tradeData1 = {
+        const order1 = {
             exchange: exchange.address,
             maker: maker,
             makerToken: token.address,
             takerToken: weth.address,
             makerAmount: `${TRADE_AMOUNT}`,
-            takerAmount: `${TRADE_AMOUNT - ARB_PROFIT}`
+            takerAmount: `${TRADE_AMOUNT - PROFIT}`
         };
-        const trade1 = await zeroExTokenOrderData(
-            zeroEx,
-            zeroExWrapperContract,
-            tradeData1
-        );
-        const tradeData2 = {
+        const trade1 = await zeroExUtils.orderData(order1);
+        const order2 = {
             exchange: exchange.address,
             maker: maker,
             makerToken: weth.address,
@@ -123,19 +108,10 @@ contract("Arbitrage", accounts => {
             makerAmount: `${TRADE_AMOUNT}`,
             takerAmount: `${TRADE_AMOUNT}`
         };
-        const trade2 = await zeroExEtherOrderData(
-            zeroEx,
-            zeroExWrapperContract,
-            tradeData2
-        );
+        const trade2 = await zeroExUtils.orderData(order2);
         const wrappers = [zeroExWrapper.address, zeroExWrapper.address];
-        const executor = new web3Beta.eth.Contract(
-            tradeExecutor.abi,
-            tradeExecutor.address
-        );
-        const data = executor.methods
-            .trade(wrappers, token.address, trade1, trade2)
-            .encodeABI();
+        const executor = new web3Beta.eth.Contract(tradeExecutor.abi, tradeExecutor.address);
+        const data = executor.methods.trade(wrappers, token.address, trade1, trade2).encodeABI();
         return data;
     };
 
@@ -159,7 +135,7 @@ contract("Arbitrage", accounts => {
             from: trader
         });
 
-        const feeAmount = FEE * TRADE_AMOUNT / 10 ** 18;
+        const feeAmount = (FEE * TRADE_AMOUNT) / 10 ** 18;
         const destETHAfter = await web3Beta.eth.getBalance(dest);
 
         expect(destETHAfter.toString()).to.equal(
@@ -169,9 +145,7 @@ contract("Arbitrage", accounts => {
                 .toString()
         );
         const makerWETHAfter = await weth.balanceOf(maker);
-        expect(makerWETHAfter.toString()).to.equal(
-            makerWETHBefore.minus(ARB_PROFIT).toString()
-        );
+        expect(makerWETHAfter.toString()).to.equal(makerWETHBefore.minus(ARB_PROFIT).toString());
         const bankETHAfter = await web3Beta.eth.getBalance(bank.address);
         expect(bankETHAfter).to.equal(
             BigNumber(bankETHBefore)
