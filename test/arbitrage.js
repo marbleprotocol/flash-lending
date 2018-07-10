@@ -57,7 +57,6 @@ contract("Arbitrage", accounts => {
         flashLender = await FlashLender.new(bank.address, FEE);
         arbitrage = await Arbitrage.new(
             flashLender.address,
-            bank.address,
             tradeExecutor.address
         );
 
