@@ -11,7 +11,6 @@ contract Arbitrage is IArbitrage, ExternalCall {
     using SafeMath for uint256;
 
     address public lender;
-    address public bank;
     address public tradeExecutor;
     address constant public ETH = 0x0;
     uint256 constant public MAX_UINT = 2 ** 256 - 1;
@@ -21,9 +20,8 @@ contract Arbitrage is IArbitrage, ExternalCall {
         _;
     }
 
-    constructor(address _lender, address _bank, address _tradeExecutor) public {
+    constructor(address _lender, address _tradeExecutor) public {
         lender = _lender;
-        bank = _bank;
         tradeExecutor = _tradeExecutor; 
     }
 
@@ -55,7 +53,6 @@ contract Arbitrage is IArbitrage, ExternalCall {
         bytes data
     )
         external
-        payable
         onlyLender 
         returns (bool)
     {
@@ -69,6 +66,8 @@ contract Arbitrage is IArbitrage, ExternalCall {
 
         // Determine the amount to repay.
         uint256 repayAmount = getRepayAmount(amount);
+
+        address bank = FlashLender(lender).bank();
 
         // Repay the bank and collect remaining profits.
         if (token == ETH) {
