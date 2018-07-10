@@ -150,7 +150,7 @@ contract("Arbitrage", accounts => {
         expect(repayAmount.toNumber()).to.equal(1001);
     });
 
-    it("should execute a 0x trade", async () => {
+    it("should execute an arbitrage trade with two 0x orders", async () => {
         const bankETHBefore = await web3Beta.eth.getBalance(bank.address);
         const destETHBefore = await web3Beta.eth.getBalance(dest);
         const makerWETHBefore = await weth.balanceOf(maker);
@@ -179,5 +179,13 @@ contract("Arbitrage", accounts => {
                 .plus(feeAmount)
                 .toString()
         );
+    });
+
+    it("should execute an arbitrage trade with 0x and Bancor", async () => {
+        // TODO:
+    });
+
+    it("should execute an arbitrage trade with two EtherDelta orders", async () => {
+        // TODO:
     });
 });
