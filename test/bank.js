@@ -145,4 +145,25 @@ contract("Bank", accounts => {
         // Lender 1 should get half of the profits since she owns half of the deposits
         expect(balance.toNumber()).to.equal(DEPOSIT_AMOUNT + PROFIT / 2);
     });
+
+    it("should allow the owner to approve a new borrower", async () => {
+        // TODO:
+    });
+
+    it("should revert if an unauthorized account tries to approve a new borrower", async () => {
+        // TODO:
+    });
+
+    it("should allow the owner to revoke approval of a borrower", async () => {
+        // TODO:
+    });
+
+    it("should allow an approved borrower to borrow Ether", async () => {
+        // TODO:
+    });
+
+    it("should allow an approved borrower to borrower tokens", async () => {
+        // TODO:
+    });
+
 });
