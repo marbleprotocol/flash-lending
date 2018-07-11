@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/marbleprotocol/arbitrage.svg?style=shield&circle-token=893b30036bd6dd14c607ab989992982b9bd1e0a0)](https://circleci.com/gh/marbleprotocol/arbitrage)
+[![CircleCI](https://circleci.com/gh/marbleprotocol/flash-lending.svg?style=shield&circle-token=893b30036bd6dd14c607ab989992982b9bd1e0a0)](https://circleci.com/gh/marbleprotocol/arbitrage)
 
 # ⚡️ Flash Lending
 
