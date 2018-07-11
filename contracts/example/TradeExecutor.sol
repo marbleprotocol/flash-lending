@@ -27,14 +27,14 @@ contract TradeExecutor is Withdrawable, ExternalCall {
         // Execute the first trade to get tokens
         require(execute(wrappers[0], msg.value, trade1));
 
-        // Transfer tokens to the next exchange wrapper
-        transferBalance(token, wrappers[1]);
+        // // Transfer tokens to the next exchange wrapper
+        // transferBalance(token, wrappers[1]);
 
-        // Execute the second trade to get Ether
-        require(execute(wrappers[1], 0, trade2));
+        // // Execute the second trade to get Ether
+        // require(execute(wrappers[1], 0, trade2));
         
-        // Send the arbitrageur Ether
-        msg.sender.transfer(address(this).balance);
+        // // Send the arbitrageur Ether
+        // msg.sender.transfer(address(this).balance);
     }
 
     function execute(address wrapper, uint256 value, bytes data) private returns (bool) {

@@ -21,35 +21,12 @@ export class ZeroExUtils {
             this.weth.address,
             this.tokenTransferProxy.address
         );
+        this.zeroExWrapperContract = new this.web3.eth.Contract(
+            ZeroExWrapper.abi,
+            this.zeroExWrapper.address
+        );
         const networkId = await this.web3.eth.net.getId();
         this.zeroEx = new ZeroEx(this.web3.currentProvider, { networkId: Number(networkId) });
-    }
-
-    async createSignedOrder(order) {
-        const trade = await this.createZeroExOrder(
-            order.exchange,
-            order.maker,
-            order.makerToken,
-            order.takerToken,
-            order.makerAmount,
-            order.takerAmount
-        );
-        const signedOrder = await this.signOrder(this.web3, trade, order.maker);
-        const orderAddresses = this.getAddresses(signedOrder);
-        const orderValues = this.getValues(signedOrder);
-        return {
-            orderAddresses: orderAddresses,
-            orderValues: orderValues,
-            ecSignature: signedOrder.ecSignature
-        };
-    }
-
-    async orderData(order) {
-        const signedOrder = await this.createSignedOrder(order);
-        const sig = signedOrder.ecSignature;
-        return this.zeroExWrapper.methods
-            .getEther(signedOrder.orderAddresses, signedOrder.orderValues, sig.v, sig.r, sig.s)
-            .encodeABI();
     }
 
     async createZeroExOrder(exchange, maker, makerToken, takerToken, makerAmount, takerAmount) {
@@ -68,6 +45,33 @@ export class ZeroExUtils {
             expirationUnixTimestampSec: "1546300800" // 1/1/19
         };
         return order;
+    }
+
+    async createSignedOrder(order) {
+        const trade = await this.createZeroExOrder(
+            order.exchange,
+            order.maker,
+            order.makerToken,
+            order.takerToken,
+            order.makerAmount,
+            order.takerAmount
+        );
+        const signedOrder = await this.signOrder(trade, order.maker);
+        const orderAddresses = this.getAddresses(signedOrder);
+        const orderValues = this.getValues(signedOrder);
+        return {
+            orderAddresses: orderAddresses,
+            orderValues: orderValues,
+            ecSignature: signedOrder.ecSignature
+        };
+    }
+
+    async orderData(order) {
+        const signedOrder = await this.createSignedOrder(order);
+        const sig = signedOrder.ecSignature;
+        return this.zeroExWrapperContract.methods
+            .getEther(signedOrder.orderAddresses, signedOrder.orderValues, sig.v, sig.r, sig.s)
+            .encodeABI();
     }
 
     async signOrder(order, maker) {
