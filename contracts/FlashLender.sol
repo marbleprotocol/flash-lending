@@ -21,7 +21,7 @@ contract FlashLender is ReentrancyGuard, Ownable {
         uint256 balance = IBank(bank).totalSupplyOf(token);
         _;
         uint256 feePayment = amount.mul(fee).div(10 ** 18); 
-        require(IBank(bank).totalSupplyOf(token) >= (balance.add(feePayment)));
+        require(IBank(bank).totalSupplyOf(token) >= (balance.add(feePayment)),"Transaction did not repay Bank");
     }
 
     constructor(address _bank, uint256 _fee) public {

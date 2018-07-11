@@ -2,6 +2,7 @@ const Bank = artifacts.require("Bank");
 const Token = artifacts.require("MockToken");
 const chai = require("chai"),
     expect = chai.expect;
+
 import Web3 from "web3";
 import BigNumber from "bignumber.js";
 import { getTxCost } from "./helpers/utils";
