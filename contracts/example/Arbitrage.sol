@@ -2,16 +2,15 @@ pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./interface/Arbitrage.sol";
-import "./interface/BankInterface.sol";
-import "./FlashLender.sol";
+import "../interface/IArbitrage.sol";
+import "../interface/IBank.sol";
+import "../FlashLender.sol";
 import "./ExternalCall.sol";
 
-contract ArbitrageImpl is Arbitrage, ExternalCall {
+contract Arbitrage is IArbitrage, ExternalCall {
     using SafeMath for uint256;
 
     address public lender;
-    address public bank;
     address public tradeExecutor;
     address constant public ETH = 0x0;
     uint256 constant public MAX_UINT = 2 ** 256 - 1;
@@ -21,9 +20,8 @@ contract ArbitrageImpl is Arbitrage, ExternalCall {
         _;
     }
 
-    constructor(address _lender, address _bank, address _tradeExecutor) public {
+    constructor(address _lender, address _tradeExecutor) public {
         lender = _lender;
-        bank = _bank;
         tradeExecutor = _tradeExecutor; 
     }
 
@@ -31,22 +29,33 @@ contract ArbitrageImpl is Arbitrage, ExternalCall {
     function () payable public {}
 
     /**
-    * @dev Borrow from flash lender to execute atomic arbitrage trade. 
-    * @param token Address of the token to borrow.
+    * @dev Borrow from flash lender to execute arbitrage trade. 
+    * @param token Address of the token to borrow. 0x0 for Ether.
     * @param amount Amount to borrow.
-    * @param data Calldata of the trades to execute on trade executor.
+    * @param dest Address of the account to receive arbitrage profits.
+    * @param data The data to execute the arbitrage trade.
     */
-    function submitTrade(address token, address dest, uint256 amount, bytes data) external {
-        FlashLender(lender).borrow(token, dest, amount, data);
+    function submitTrade(address token, uint256 amount, address dest, bytes data) external {
+        FlashLender(lender).borrow(token, amount, dest, data);
     }
 
     /**
     * @dev Callback from flash lender. Executes arbitrage trade.
-    * @param token Address of the borrowed token.
-    * @param amount Amount of borrowed tokens.
-    * @param data Calldata of the trades to execute on trade executor.
+    * @param token Address of the borrowed token. 0x0 for Ether.
+    * @param amount Amount borrowed.
+    * @param dest Address of the account to receive arbitrage profits.
+    * @param data The data to execute the arbitrage trade.
     */
-    function executeArbitrage(address token, address dest, uint256 amount, bytes data) external payable onlyLender returns (bool) {
+    function executeArbitrage(
+        address token,
+        uint256 amount,
+        address dest,
+        bytes data
+    )
+        external
+        onlyLender 
+        returns (bool)
+    {
         uint256 value = 0;
         if (token == ETH) {
             value = amount;
@@ -58,15 +67,17 @@ contract ArbitrageImpl is Arbitrage, ExternalCall {
         // Determine the amount to repay.
         uint256 repayAmount = getRepayAmount(amount);
 
+        address bank = FlashLender(lender).bank();
+
         // Repay the bank and collect remaining profits.
         if (token == ETH) {
-            BankInterface(bank).repay.value(repayAmount)(token, repayAmount);
+            IBank(bank).repay.value(repayAmount)(token, repayAmount);
             dest.transfer(address(this).balance);
         } else {
             if (ERC20(token).allowance(this, bank) < repayAmount) {
                 ERC20(token).approve(bank, MAX_UINT);
             }
-            BankInterface(bank).repay(token, repayAmount);
+            IBank(bank).repay(token, repayAmount);
             uint256 balance = ERC20(token).balanceOf(this);
             require(ERC20(token).transfer(dest, balance), "Token transfer to dest failed");
         }

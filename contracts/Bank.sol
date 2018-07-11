@@ -8,7 +8,7 @@ import "./Transfer.sol";
 contract Bank is Ownable, Transfer {
     using SafeMath for uint256;
 
-    // Lender => Approved
+    // Borrower => Approved
     mapping (address => bool) public approved;
 
     address constant public ETH = 0x0;
@@ -42,8 +42,8 @@ contract Bank is Ownable, Transfer {
     /**
     * @dev Borrow tokens from the bank on behalf of another account.
     */
-    function borrowFor(address token, address borrower, uint256 amount) public onlyApproved {
-        transfer(token, borrower, amount);        
+    function borrowFor(address token, address who, uint256 amount) public onlyApproved {
+        transfer(token, who, amount);        
     }
 
     /**
