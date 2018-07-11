@@ -66,7 +66,15 @@ export class ZeroExUtils {
         };
     }
 
-    async orderData(order) {
+    async getTokensOrderData(order) {
+        const signedOrder = await this.createSignedOrder(order);
+        const sig = signedOrder.ecSignature;
+        return this.zeroExWrapperContract.methods
+            .getTokens(signedOrder.orderAddresses, signedOrder.orderValues, sig.v, sig.r, sig.s)
+            .encodeABI();
+    }
+
+    async getEtherOrderData(order) {
         const signedOrder = await this.createSignedOrder(order);
         const sig = signedOrder.ecSignature;
         return this.zeroExWrapperContract.methods

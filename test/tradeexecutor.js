@@ -76,7 +76,7 @@ contract("TradeExecutor", accounts => {
         // console.log(BigNumber(prevBalance).minus(txCost).toString());
     });
 
-    it.only("should trade 0x", async () => {
+    it("should trade 0x", async () => {
         const tokenA = await MockToken.new([maker], [20000]);
         await weth.deposit({ from: maker, value: 30000 });
 
@@ -92,7 +92,7 @@ contract("TradeExecutor", accounts => {
             makerAmount: "1000",
             takerAmount: "800"
         };
-        const trade1 = await zeroExUtils.orderData(order1);
+        const trade1 = await zeroExUtils.getTokensOrderData(order1);
         const order2 = {
             exchange: exchange.address,
             maker: maker,
@@ -101,12 +101,9 @@ contract("TradeExecutor", accounts => {
             makerAmount: "1000",
             takerAmount: "1000"
         };
-        const trade2 = await zeroExUtils.orderData(order2);
+        const trade2 = await zeroExUtils.getEtherOrderData(order2);
 
         const prevBalance = await web3Beta.eth.getBalance(trader);
-
-        console.log(zeroExWrapper.address);
-        console.log(tokenA.address);
 
         const result = await tradeExecutor.trade(
             [zeroExWrapper.address, zeroExWrapper.address],
@@ -116,13 +113,14 @@ contract("TradeExecutor", accounts => {
             { from: trader, value: 800 }
         );
 
-        // const newBalance = await web3Beta.eth.getBalance(trader);
-        // const txCost = await getTxCost(web3Beta, result);
-        // expect(newBalance).to.equal(
-        //     BigNumber(prevBalance)
-        //         .minus(txCost)
-        //         .plus(200)
-        //         .toString()
-        // );
+        const newBalance = await web3Beta.eth.getBalance(trader);
+        const txCost = await getTxCost(web3Beta, result);
+
+        expect(newBalance).to.equal(
+            BigNumber(prevBalance)
+                .minus(txCost)
+                .plus(200)
+                .toString()
+        );
     });
 });

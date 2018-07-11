@@ -12,6 +12,7 @@ const Web3 = require("web3");
 const web3Beta = new Web3(web3.currentProvider);
 
 import { ZeroExUtils } from "./helpers/ZeroExUtils";
+import { EtherDeltaUtils } from "./helpers/EtherDeltaUtils";
 import { getTxCost } from "./helpers/utils";
 import { deployZeroEx } from "./helpers/ZeroExUtils";
 import { MAX_UINT } from "./helpers/constants";
@@ -24,6 +25,7 @@ contract("Arbitrage", accounts => {
     let arbitrage;
     let token;
     let tradeExecutor;
+    let tradeExecutorContract; // web3 version of trade executor (not truffle-contract)
 
     // 0x
     let zeroExUtils;
@@ -33,6 +35,11 @@ contract("Arbitrage", accounts => {
     let weth;
     let exchange;
     let tokenTransferProxy;
+
+    let etherDeltaUtils;
+    let etherDeltaWrapper;
+    let etherDeltaWrapperContract; // web3 version of wrapper (not truffle-contract)
+    let etherDelta;
 
     // Accounts
     const trader = accounts[1];
@@ -58,7 +65,19 @@ contract("Arbitrage", accounts => {
         zeroExUtils = new ZeroExUtils(web3Beta);
         await zeroExUtils.init();
 
-        ({ zeroExWrapper, exchange, weth, tokenTransferProxy, zeroEx } = zeroExUtils);
+        ({
+            zeroExWrapper,
+            zeroExWrapperContract,
+            exchange,
+            weth,
+            tokenTransferProxy,
+            zeroEx
+        } = zeroExUtils);
+
+        etherDeltaUtils = new EtherDeltaUtils(web3Beta);
+        await etherDeltaUtils.init();
+
+        ({ etherDeltaWrapper, etherDeltaWrapperContract, etherDelta } = etherDeltaUtils);
 
         // Approve the FlashLender contract as a bank borrower
         await bank.addBorrower(flashLender.address, { from: lender });
@@ -85,35 +104,8 @@ contract("Arbitrage", accounts => {
             from: maker
         });
 
-        zeroExWrapperContract = new web3Beta.eth.Contract(zeroExWrapper.abi, zeroExWrapper.address);
+        tradeExecutorContract = new web3Beta.eth.Contract(tradeExecutor.abi, tradeExecutor.address);
     });
-
-    // Calldata to give to Arbitrage.
-    // This will be used in the executeArbitrage callback from FlashLender.
-    const tradeExecutorData = async () => {
-        const order1 = {
-            exchange: exchange.address,
-            maker: maker,
-            makerToken: token.address,
-            takerToken: weth.address,
-            makerAmount: `${TRADE_AMOUNT}`,
-            takerAmount: `${TRADE_AMOUNT - PROFIT}`
-        };
-        const trade1 = await zeroExUtils.orderData(order1);
-        const order2 = {
-            exchange: exchange.address,
-            maker: maker,
-            makerToken: weth.address,
-            takerToken: token.address,
-            makerAmount: `${TRADE_AMOUNT}`,
-            takerAmount: `${TRADE_AMOUNT}`
-        };
-        const trade2 = await zeroExUtils.orderData(order2);
-        const wrappers = [zeroExWrapper.address, zeroExWrapper.address];
-        const executor = new web3Beta.eth.Contract(tradeExecutor.abi, tradeExecutor.address);
-        const data = executor.methods.trade(wrappers, token.address, trade1, trade2).encodeABI();
-        return data;
-    };
 
     it("flash lender should have the correct fee", async () => {
         const fee = await flashLender.fee();
@@ -125,12 +117,39 @@ contract("Arbitrage", accounts => {
         expect(repayAmount.toNumber()).to.equal(1001);
     });
 
-    it("should execute an arbitrage trade with two 0x orders", async () => {
+    const zeroExTradeData = async () => {
+        const order1 = {
+            exchange: exchange.address,
+            maker: maker,
+            makerToken: token.address,
+            takerToken: weth.address,
+            makerAmount: `${TRADE_AMOUNT}`,
+            takerAmount: `${TRADE_AMOUNT - PROFIT}`
+        };
+        const trade1 = await zeroExUtils.getTokensOrderData(order1);
+        const order2 = {
+            exchange: exchange.address,
+            maker: maker,
+            makerToken: weth.address,
+            takerToken: token.address,
+            makerAmount: `${TRADE_AMOUNT}`,
+            takerAmount: `${TRADE_AMOUNT}`
+        };
+        const trade2 = await zeroExUtils.getEtherOrderData(order2);
+        const wrappers = [zeroExWrapper.address, zeroExWrapper.address];
+        const executor = new web3Beta.eth.Contract(tradeExecutor.abi, tradeExecutor.address);
+        const data = tradeExecutorContract.methods
+            .trade(wrappers, token.address, trade1, trade2)
+            .encodeABI();
+        return data;
+    };
+
+    it("should execute an arbitrage trade for Ether with two 0x orders", async () => {
         const bankETHBefore = await web3Beta.eth.getBalance(bank.address);
         const destETHBefore = await web3Beta.eth.getBalance(dest);
         const makerWETHBefore = await weth.balanceOf(maker);
 
-        const data = await tradeExecutorData();
+        const data = await zeroExTradeData();
         await arbitrage.submitTrade(ETH, TRADE_AMOUNT, dest, data, {
             from: trader
         });
@@ -140,12 +159,12 @@ contract("Arbitrage", accounts => {
 
         expect(destETHAfter.toString()).to.equal(
             BigNumber(destETHBefore)
-                .plus(BigNumber(ARB_PROFIT))
+                .plus(BigNumber(PROFIT))
                 .minus(feeAmount)
                 .toString()
         );
         const makerWETHAfter = await weth.balanceOf(maker);
-        expect(makerWETHAfter.toString()).to.equal(makerWETHBefore.minus(ARB_PROFIT).toString());
+        expect(makerWETHAfter.toString()).to.equal(makerWETHBefore.minus(PROFIT).toString());
         const bankETHAfter = await web3Beta.eth.getBalance(bank.address);
         expect(bankETHAfter).to.equal(
             BigNumber(bankETHBefore)
@@ -154,11 +173,96 @@ contract("Arbitrage", accounts => {
         );
     });
 
-    it("should execute an arbitrage trade with 0x and Bancor", async () => {
-        // TODO:
-    });
+    const etherDeltaTradeData = async () => {
+        const makerPrivateKey =
+            "0xfd88f66d3c9a809a45b0116e2b314efad7cb73257e0f3259ea8da663459dfcdf";
 
-    it("should execute an arbitrage trade with two EtherDelta orders", async () => {
-        // TODO:
+        // Deposit tokens to EtherDelta
+        await etherDelta.depositToken(token.address, TRADE_AMOUNT, { from: maker });
+
+        const expires = 1546300800; // 1/1/2019
+
+        const takerAmount = TRADE_AMOUNT - PROFIT;
+        const makerAmount = TRADE_AMOUNT;
+
+        const nonce1 = 1;
+        const nonce2 = 2;
+
+        // Place order for maker
+        await etherDelta.order(0, TRADE_AMOUNT, token.address, TRADE_AMOUNT, expires, nonce1, {
+            from: maker
+        });
+
+        await etherDelta.deposit({
+            from: maker,
+            value: TRADE_AMOUNT
+        });
+
+        // Place order for maker
+        await etherDelta.order(
+            token.address,
+            TRADE_AMOUNT - PROFIT,
+            0,
+            TRADE_AMOUNT,
+            expires,
+            nonce2,
+            {
+                from: maker
+            }
+        );
+
+        const sha256Hash = await etherDelta.hash(
+            0,
+            takerAmount,
+            token.address,
+            makerAmount,
+            expires,
+            nonce1
+        );
+        const ecSignature = web3Beta.eth.accounts.sign(sha256Hash, makerPrivateKey);
+        const { r, s, v } = ecSignature;
+
+        const trade1 = etherDeltaWrapperContract.methods
+            .getTokens(takerAmount, token.address, makerAmount, expires, nonce1, maker, r, s, v)
+            .encodeABI();
+
+        const trade2 = etherDeltaWrapperContract.methods
+            .getEther(token.address, takerAmount, takerAmount, expires, nonce2, maker, r, s, v)
+            .encodeABI();
+
+        const wrappers = [etherDeltaWrapper.address, etherDeltaWrapper.address];
+        const data = tradeExecutorContract.methods
+            .trade(wrappers, token.address, trade1, trade2)
+            .encodeABI();
+        return data;
+    };
+
+    it.only("should execute an arbitrage trade for Ether with two EtherDelta orders", async () => {
+        const bankETHBefore = await web3Beta.eth.getBalance(bank.address);
+        const destETHBefore = await web3Beta.eth.getBalance(dest);
+        const makerWETHBefore = await weth.balanceOf(maker);
+
+        const data = await etherDeltaTradeData();
+        await arbitrage.submitTrade(ETH, TRADE_AMOUNT, dest, data, {
+            from: trader
+        });
+
+        // const feeAmount = (FEE * TRADE_AMOUNT) / 10 ** 18;
+        // const destETHAfter = await web3Beta.eth.getBalance(dest);
+
+        // expect(destETHAfter.toString()).to.equal(
+        //     BigNumber(destETHBefore)
+        //         .plus(BigNumber(PROFIT))
+        //         .minus(feeAmount)
+        //         .toString()
+        // );
+        // const makerWETHAfter = await weth.balanceOf(maker);
+        // expect(makerWETHAfter.toString()).to.equal(makerWETHBefore.minus(ARB_PROFIT).toString());
+        // const bankETHAfter = await web3Beta.eth.getBalance(bank.address);
+        // expect(bankETHAfter).to.equal(
+        //     BigNumber(bankETHBefore)
+        //         .plus(feeAmount)
+        //         .toString()
+        // );
     });
 });
