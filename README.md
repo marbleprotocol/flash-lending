@@ -6,7 +6,28 @@ Programmatically borrow Ether to make arbitrage trades on decentralized exchange
 
 ## How
 
-See [Arbitrage.sol](contracts/example/Arbitrage.sol) and its associated [test](test/arbitrage.js) for an example.
+[FlashLender](https://etherscan.io/address/0xf010242cA4e670f21A522421dEF3a82cDfaA7EDc) is a smart contract that lets anyone permissionlessly borrow Ether to execute an arbitrage trade.
+
+```
+    function borrow(
+        address token,
+        uint256 amount,
+        address dest,
+        bytes data
+    )
+        external
+        nonReentrant
+        isArbitrage(token, amount)
+        returns (bool)
+    {
+        // Borrow from the bank and send to the arbitrageur.
+        IBank(bank).borrowFor(token, msg.sender, amount);
+        // Call the arbitrageur's execute arbitrage method.
+        return IArbitrage(msg.sender).executeArbitrage(token, amount, dest, data);
+    }
+```
+
+In order to borrow, your arbitrage smart contract must implement the `executeArbitrage` callback shown above. For an example, see [Arbitrage.sol](contracts/example/Arbitrage.sol) and its associated [test](test/arbitrage.js).
 
 ## Testing
 
