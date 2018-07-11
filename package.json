@@ -43,6 +43,7 @@
     "web3-provider-engine": "^14.0.5"
   },
   "devDependencies": {
+    "eth-gas-reporter": "^0.1.9",
     "solidity-coverage": "^0.5.5"
   }
 }
