@@ -8,7 +8,7 @@ contract TradeExecutor is Withdrawable, ExternalCall {
     // Allow exchange wrappers to send Ether
     function () public payable {}
 
-    /*
+    /**
      * @dev Execute multiple trades in a single transaction.
      * @param wrappers Addresses of exchange wrappers.
      * @param token Address of ERC20 token to receive in first trade.
@@ -37,10 +37,21 @@ contract TradeExecutor is Withdrawable, ExternalCall {
         msg.sender.transfer(address(this).balance);
     }
 
+    /**
+     * @dev Execute external call.
+     * @param wrapper Address of exchange wrappers.
+     * @param value Value of ether to send
+     * @param data Calldata for external call
+    */
     function execute(address wrapper, uint256 value, bytes data) private returns (bool) {
         return external_call(wrapper, value, data.length, data);
     }
 
+    /**
+     * @dev Transfer Balance of a given token.
+     * @param token Address of token to send balance of.
+     * @param to Address to send tokens to.
+    */
     function transferBalance(address token, address to) private returns (bool) {
         uint256 balance = IERC20(token).balanceOf(this);
         return IERC20(token).transfer(to, balance);
