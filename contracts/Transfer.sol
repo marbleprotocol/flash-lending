@@ -9,8 +9,11 @@ contract Transfer {
 
     /**
     * @dev Transfer tokens from this contract to an account.
+    * @param token Address of token to transfer. 0x0 for ETH
+    * @param to Address to send tokens to.
+    * @param amount Amount of token to send.
     */
-    function transfer(address token, address to, uint256 amount) internal returns (bool success) {
+    function transfer(address token, address to, uint256 amount) internal returns (bool) {
         if (token == ETH) {
             to.transfer(amount);
         } else {
@@ -21,6 +24,10 @@ contract Transfer {
 
     /**
     * @dev Transfer tokens from an account to this contract.
+    * @param token Address of token to transfer. 0x0 for ETH
+    * @param from Address to send tokens from.
+    * @param to Address to send tokens to.
+    * @param amount Amount of token to send.
     */
     function transferFrom(
         address token,
@@ -29,7 +36,7 @@ contract Transfer {
         uint256 amount
     ) 
         internal
-        returns (bool success)
+        returns (bool)
     {
         require(token == ETH && msg.value == amount || msg.value == 0);
 
