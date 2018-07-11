@@ -13,7 +13,7 @@ import EVMRevert from './helpers/EVMRevert';
 
 const web3Beta = new Web3(web3.currentProvider);
 
-contract.only('FlashLender', accounts => {
+contract('FlashLender', accounts => {
   // Contracts
   let bank;
   let token;
