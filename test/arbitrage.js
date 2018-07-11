@@ -182,7 +182,7 @@ contract("Arbitrage", accounts => {
 
         const expires = 1546300800; // 1/1/2019
 
-        const takerAmount = TRADE_AMOUNT - PROFIT;
+        const takerAmount = TRADE_AMOUNT;
         const makerAmount = TRADE_AMOUNT;
 
         const nonce1 = 1;
@@ -199,17 +199,9 @@ contract("Arbitrage", accounts => {
         });
 
         // Place order for maker
-        await etherDelta.order(
-            token.address,
-            TRADE_AMOUNT - PROFIT,
-            0,
-            TRADE_AMOUNT,
-            expires,
-            nonce2,
-            {
-                from: maker
-            }
-        );
+        await etherDelta.order(token.address, TRADE_AMOUNT, 0, TRADE_AMOUNT, expires, nonce2, {
+            from: maker
+        });
 
         const sha256Hash = await etherDelta.hash(
             0,
