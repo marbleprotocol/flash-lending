@@ -34,6 +34,10 @@ contract("TradeExecutor", accounts => {
     const trader = accounts[1];
     const maker = accounts[2];
 
+    const MAKER_AMOUNT = 1000; 
+    const TAKER_AMOUNT = 800;
+    const PROFIT = MAKER_AMOUNT - TAKER_AMOUNT; 
+
     beforeEach(async () => {
         tradeExecutor = await TradeExecutor.new();
         ({
@@ -89,8 +93,8 @@ contract("TradeExecutor", accounts => {
             maker: maker,
             makerToken: tokenA.address,
             takerToken: weth.address,
-            makerAmount: "1000",
-            takerAmount: "800"
+            makerAmount: `${MAKER_AMOUNT}`,
+            takerAmount: `${TAKER_AMOUNT}`
         };
         const trade1 = await zeroExUtils.getTokensOrderData(order1);
         const order2 = {
@@ -115,35 +119,30 @@ contract("TradeExecutor", accounts => {
 
         const newBalance = await web3Beta.eth.getBalance(trader);
         const txCost = await getTxCost(web3Beta, result);
-
         expect(newBalance).to.equal(
             BigNumber(prevBalance)
                 .minus(txCost)
-                .plus(200)
+                .plus(PROFIT)
                 .toString()
         );
     });
 
-    it.only("should trade 0x for tokens", async () => {
-        const takerAmount = 800;
+    it("should trade 0x for tokens", async () => {
 
-        const tokenA = await MockToken.new([maker, trader], [20000, takerAmount]);
+        const tokenA = await MockToken.new([maker, trader], [20000, TAKER_AMOUNT]);
         await weth.deposit({ from: maker, value: 30000 });
 
         // Approve the proxy to transfer tokens on behalf of the maker
         await weth.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
         await tokenA.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
 
-        // Transfer tokens to the trade executor
-        await tokenA.transfer(tradeExecutor.address, takerAmount, { from: trader });
-
         const order1 = {
             exchange: exchange.address,
             maker: maker,
             makerToken: weth.address,
             takerToken: tokenA.address,
-            makerAmount: "1000",
-            takerAmount: `${takerAmount}`
+            makerAmount: `${MAKER_AMOUNT}`,
+            takerAmount: `${TAKER_AMOUNT}`
         };
         const trade1 = await zeroExUtils.getEtherOrderData(order1);
         const order2 = {
@@ -158,6 +157,8 @@ contract("TradeExecutor", accounts => {
 
         const prevBalance = await tokenA.balanceOf(trader);
 
+        // Transfer tokens to the trade executor
+        await tokenA.transfer(tradeExecutor.address, TAKER_AMOUNT, { from: trader });
         const result = await tradeExecutor.tradeForTokens(
             [zeroExWrapper.address, zeroExWrapper.address],
             tokenA.address,
@@ -168,12 +169,6 @@ contract("TradeExecutor", accounts => {
 
         const newBalance = await tokenA.balanceOf(trader);
         const txCost = await getTxCost(web3Beta, result);
-
-        expect(newBalance).to.equal(
-            BigNumber(prevBalance)
-                .minus(txCost)
-                .plus(200)
-                .toString()
-        );
+        expect(newBalance.toNumber()).to.equal(prevBalance.plus(PROFIT).toNumber());
     });
 });

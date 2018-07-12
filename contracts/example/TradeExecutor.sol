@@ -57,14 +57,11 @@ contract TradeExecutor is Transfer, Withdrawable, ExternalCall {
 
         uint256 balance = address(this).balance;
 
-        // Transfer Ether to the next exchange wrapper
-        transfer(ETH, wrappers[1], balance);
-
         // Execute the second trade to get tokens
         require(execute(wrappers[1], balance, trade2));
 
-        // tokenBalance = IERC20(token).balanceOf(this);
-        // require(IERC20(token).transfer(msg.sender, tokenBalance));
+        tokenBalance = IERC20(token).balanceOf(this);
+        require(IERC20(token).transfer(msg.sender, tokenBalance));
     }
 
     function execute(address wrapper, uint256 value, bytes data) private returns (bool) {
