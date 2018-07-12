@@ -76,7 +76,7 @@ contract("TradeExecutor", accounts => {
         // console.log(BigNumber(prevBalance).minus(txCost).toString());
     });
 
-    it("should trade 0x", async () => {
+    it("should trade 0x for Ether", async () => {
         const tokenA = await MockToken.new([maker], [20000]);
         await weth.deposit({ from: maker, value: 30000 });
 
@@ -114,6 +114,59 @@ contract("TradeExecutor", accounts => {
         );
 
         const newBalance = await web3Beta.eth.getBalance(trader);
+        const txCost = await getTxCost(web3Beta, result);
+
+        expect(newBalance).to.equal(
+            BigNumber(prevBalance)
+                .minus(txCost)
+                .plus(200)
+                .toString()
+        );
+    });
+
+    it.only("should trade 0x for tokens", async () => {
+        const takerAmount = 800;
+
+        const tokenA = await MockToken.new([maker, trader], [20000, takerAmount]);
+        await weth.deposit({ from: maker, value: 30000 });
+
+        // Approve the proxy to transfer tokens on behalf of the maker
+        await weth.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
+        await tokenA.approve(tokenTransferProxy.address, MAX_UINT, { from: maker });
+
+        // Transfer tokens to the trade executor
+        await tokenA.transfer(tradeExecutor.address, takerAmount, { from: trader });
+
+        const order1 = {
+            exchange: exchange.address,
+            maker: maker,
+            makerToken: weth.address,
+            takerToken: tokenA.address,
+            makerAmount: "1000",
+            takerAmount: `${takerAmount}`
+        };
+        const trade1 = await zeroExUtils.getEtherOrderData(order1);
+        const order2 = {
+            exchange: exchange.address,
+            maker: maker,
+            makerToken: tokenA.address,
+            takerToken: weth.address,
+            makerAmount: "1000",
+            takerAmount: "1000"
+        };
+        const trade2 = await zeroExUtils.getTokensOrderData(order2);
+
+        const prevBalance = await tokenA.balanceOf(trader);
+
+        const result = await tradeExecutor.tradeForTokens(
+            [zeroExWrapper.address, zeroExWrapper.address],
+            tokenA.address,
+            trade1,
+            trade2,
+            { from: trader }
+        );
+
+        const newBalance = await tokenA.balanceOf(trader);
         const txCost = await getTxCost(web3Beta, result);
 
         expect(newBalance).to.equal(

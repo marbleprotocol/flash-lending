@@ -1,9 +1,10 @@
 pragma solidity 0.4.24;
 
+import "../Transfer.sol";
 import "../proxy/Withdrawable.sol";
 import "./ExternalCall.sol";
 
-contract TradeExecutor is Withdrawable, ExternalCall {
+contract TradeExecutor is Transfer, Withdrawable, ExternalCall {
 
     // Allow exchange wrappers to send Ether
     function () public payable {}
@@ -21,14 +22,16 @@ contract TradeExecutor is Withdrawable, ExternalCall {
         bytes trade1,
         bytes trade2
     )
-        public
+        external
         payable
     {
         // Execute the first trade to get tokens
         require(execute(wrappers[0], msg.value, trade1));
 
+        uint256 tokenBalance = IERC20(token).balanceOf(this);
+
         // Transfer tokens to the next exchange wrapper
-        transferBalance(token, wrappers[1]);
+        transfer(token, wrappers[1], tokenBalance);
 
         // Execute the second trade to get Ether
         require(execute(wrappers[1], 0, trade2));
@@ -37,13 +40,35 @@ contract TradeExecutor is Withdrawable, ExternalCall {
         msg.sender.transfer(address(this).balance);
     }
 
-    function execute(address wrapper, uint256 value, bytes data) private returns (bool) {
-        return external_call(wrapper, value, data.length, data);
+    function tradeForTokens(
+        address[2] wrappers,
+        address token,
+        bytes trade1,
+        bytes trade2
+    )
+        external
+    {
+        // Transfer tokens to the first exchange wrapper
+        uint256 tokenBalance = IERC20(token).balanceOf(this);
+        transfer(token, wrappers[0], tokenBalance);
+
+        // Execute the first trade to get Ether
+        require(execute(wrappers[0], 0, trade1));
+
+        uint256 balance = address(this).balance;
+
+        // Transfer Ether to the next exchange wrapper
+        transfer(ETH, wrappers[1], balance);
+
+        // Execute the second trade to get tokens
+        require(execute(wrappers[1], balance, trade2));
+
+        // tokenBalance = IERC20(token).balanceOf(this);
+        // require(IERC20(token).transfer(msg.sender, tokenBalance));
     }
 
-    function transferBalance(address token, address to) private returns (bool) {
-        uint256 balance = IERC20(token).balanceOf(this);
-        return IERC20(token).transfer(to, balance);
+    function execute(address wrapper, uint256 value, bytes data) private returns (bool) {
+        return external_call(wrapper, value, data.length, data);
     }
 
 }
