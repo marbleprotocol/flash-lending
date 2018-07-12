@@ -1,6 +1,20 @@
 require('babel-register');
 require('babel-polyfill');
 const Infura = require('./infura');
+const Ledger = require('./ledger');
+
+const Web3 = require('web3');
+const web3 = new Web3();
+
+const ledgerOptions = {
+  // networkId: 4, // mainnet
+  // path: "44'/60'/0'/0", // ledger default derivation path
+  // askConfirm: true,
+  // accountsLength: 1,
+  // accountsOffset: 0
+};
+
+const GAS_PRICE = 12; // gwei
 
 module.exports = {
   networks: {
@@ -10,6 +24,14 @@ module.exports = {
       network_id: '*', // Match any network id
       gas: 100000000, // High
       gasPrice: 0 //18000000000
+    },
+    abc: {
+      provider: () => {
+        return new Ledger('http://localhost:8545');
+      },
+      network_id: '*',
+      gas: 4600000,
+      gasPrice: web3.utils.toWei(`${GAS_PRICE}`, 'gwei')
     },
     mainnet: {
       provider: () => {
@@ -25,9 +47,14 @@ module.exports = {
     },
     rinkeby: {
       provider: () => {
-        return new Infura('https://rinkeby.infura.io/');
+        return new LedgerWalletProvider(
+          ledgerOptions,
+          `https://rinkeby.infura.io/${process.env.INFURA_ACCESS_TOKEN}`
+        );
       },
-      network_id: 4
+      network_id: 4,
+      gas: 4600000,
+      gasPrice: web3.utils.toWei(`${GAS_PRICE}`, 'gwei')
     },
     kovan: {
       provider: () => {

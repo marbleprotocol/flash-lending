@@ -11,6 +11,6 @@ module.exports = function(deployer) {
       return deployer.deploy(TradeExecutor);
     })
     .then(() => {
-      return deployer.deployer(Arbitrage, FlashLender.address, 0);
+      return deployer.deploy(Arbitrage, FlashLender.address, 0);
     });
 };
