@@ -11,8 +11,6 @@ contract Bank is Ownable, Transfer {
     // Borrower => Approved
     mapping (address => bool) public approved;
 
-    address constant public ETH = 0x0;
-
     modifier onlyApproved() {
         require(approved[msg.sender] == true);
         _;
