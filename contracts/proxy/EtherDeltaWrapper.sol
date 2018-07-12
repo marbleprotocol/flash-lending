@@ -7,8 +7,6 @@ import "../Transfer.sol";
 
 contract EtherDeltaWrapper is ExchangeWrapper, Transfer {
 
-    uint256 public constant MAX_UINT = uint(-1);
-
     constructor(address _exchange) public {
         exchange = _exchange;
     }

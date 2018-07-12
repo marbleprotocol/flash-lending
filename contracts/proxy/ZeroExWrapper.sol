@@ -11,7 +11,6 @@ contract ZeroExWrapper is ExchangeWrapper, Transfer {
 
     address public weth; // Wrapped Ether
     address public proxy; // Token transfer proxy
-    uint256 constant public MAX_UINT = uint(-1);
 
     constructor(address _exchange, address _weth, address _proxy) public {
         exchange = _exchange;
