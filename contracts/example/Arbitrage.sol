@@ -59,6 +59,9 @@ contract Arbitrage is IArbitrage, ExternalCall {
         uint256 value = 0;
         if (token == ETH) {
             value = amount;
+        } else {
+            // Send tokens to Trade Executor
+            ERC20(token).transfer(tradeExecutor, amount);
         }
 
         // Execute the trades.
