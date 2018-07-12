@@ -90,6 +90,7 @@ contract Arbitrage is IArbitrage, ExternalCall {
 
     /** 
     * @dev Calculate the amount owed after borrowing.
+    * @param amount Amount used to calculate repayment amount.
     */ 
     function getRepayAmount(uint256 amount) public view returns (uint256) {
         uint256 fee = FlashLender(lender).fee();
