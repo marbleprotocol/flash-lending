@@ -51,7 +51,6 @@ contract('Arbitrage', accounts => {
   const DEPOSIT_AMOUNT = 10000;
   const ETH = '0x0000000000000000000000000000000000000000';
 
-  // const FEE = 0;
   const FEE = 10 ** 15; // .1% fee (10 ** 15 / 10*18)
   const PROFIT = 2000;
   const TRADE_AMOUNT = 10000;
