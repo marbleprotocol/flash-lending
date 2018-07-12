@@ -1,3 +1,21 @@
+/*
+
+  Copyright 2018 Contra Labs Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+*/
+
 pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
@@ -7,10 +25,12 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./interface/IBank.sol";
 import "./interface/IArbitrage.sol";
 
-
+// @title FlashLender: Borrow from the bank and enforce repayment by the end of transaction execution.
+// @author Rich McAteer <rich@marble.org>, Max Wolff <max@marble.org>
 contract FlashLender is ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
+    string public version = '0.1';
     address public bank;
     uint256 public fee;
     
@@ -21,9 +41,9 @@ contract FlashLender is ReentrancyGuard, Ownable {
     */
     modifier isArbitrage(address token, uint256 amount) {
         uint256 balance = IBank(bank).totalSupplyOf(token);
+        uint256 feeAmount = amount.mul(fee).div(10 ** 18); 
         _;
-        uint256 feePayment = amount.mul(fee).div(10 ** 18); 
-        require(IBank(bank).totalSupplyOf(token) >= (balance.add(feePayment)));
+        require(IBank(bank).totalSupplyOf(token) >= (balance.add(feeAmount)));
     }
 
     constructor(address _bank, uint256 _fee) public {
