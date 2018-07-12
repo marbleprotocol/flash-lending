@@ -1,10 +1,10 @@
 const Token = artifacts.require('MockToken');
-import { deployEtherDelta } from './helpers/EtherDeltaUtils';
+import { EtherDeltaUtils } from './helpers/EtherDeltaUtils';
 
 const Web3 = require('web3');
-const web3Wrapper = new Web3(web3.currentProvider);
+const web3Beta = new Web3(web3.currentProvider);
 
-const { BN } = web3Wrapper.utils;
+const { BN } = web3Beta.utils;
 
 contract('EtherDeltaWrapper', accounts => {
   // Accounts
@@ -12,20 +12,15 @@ contract('EtherDeltaWrapper', accounts => {
   const taker = accounts[1];
   const maker = accounts[2];
 
-  // const ownerPrivateKey =
-  //   '0x9eb286436e6a016a6acb87933ae83134c3056c1a2b331d7a096994e65d15fa70';
-  // const takerPrivateKey =
-  //   '0x370da1403e94240aef1cbc292532c5fc41c0d6b6b2e014513933d28cb0718a62';
   const makerPrivateKey =
     '0xfd88f66d3c9a809a45b0116e2b314efad7cb73257e0f3259ea8da663459dfcdf';
 
-  let etherDeltaWrapper, etherDelta;
+  let etherDeltaUtils, etherDeltaWrapper, etherDelta;
 
   beforeEach(async () => {
-    ({ etherDelta, etherDeltaWrapper } = await deployEtherDelta(
-      web3Wrapper,
-      owner
-    ));
+    etherDeltaUtils = new EtherDeltaUtils(web3Beta);
+    await etherDeltaUtils.init();
+    ({ etherDelta, etherDeltaWrapper } = etherDeltaUtils);
   });
 
   it('should have the correct owner', async () => {
@@ -47,7 +42,6 @@ contract('EtherDeltaWrapper', accounts => {
     // Give tokens to the maker
     const token = await Token.new([maker], [makerAmount]);
 
-    // Approve ether delta for depositing tokens
     await token.approve(etherDelta.address, makerAmount, {
       from: maker
     });
@@ -78,10 +72,7 @@ contract('EtherDeltaWrapper', accounts => {
       nonce
     );
 
-    const ecSignature = web3Wrapper.eth.accounts.sign(
-      sha256Hash,
-      makerPrivateKey
-    );
+    const ecSignature = web3Beta.eth.accounts.sign(sha256Hash, makerPrivateKey);
     const { r, s, v } = ecSignature;
 
     const makerETHBefore = await etherDelta.balanceOf(0, maker);
@@ -150,16 +141,13 @@ contract('EtherDeltaWrapper', accounts => {
       nonce
     );
 
-    const ecSignature = web3Wrapper.eth.accounts.sign(
-      sha256Hash,
-      makerPrivateKey
-    );
+    const ecSignature = web3Beta.eth.accounts.sign(sha256Hash, makerPrivateKey);
     const { r, s, v } = ecSignature;
 
     const makerTokenBefore = await etherDelta.balanceOf(token.address, maker);
     expect(Number(makerTokenBefore)).to.equal(0);
 
-    const takerETHBefore = await web3Wrapper.eth.getBalance(taker);
+    const takerETHBefore = await web3Beta.eth.getBalance(taker);
 
     // Use the exchange wrapper and the signed order to exchange token for ETH
     const { receipt, tx } = await etherDeltaWrapper.getEther(
@@ -179,8 +167,8 @@ contract('EtherDeltaWrapper', accounts => {
 
     const [makerTokenAfter, takerETHAfter, { gasPrice }] = await Promise.all([
       etherDelta.balanceOf(token.address, maker),
-      web3Wrapper.eth.getBalance(taker),
-      web3Wrapper.eth.getTransaction(tx)
+      web3Beta.eth.getBalance(taker),
+      web3Beta.eth.getTransaction(tx)
     ]);
 
     expect(Number(makerTokenAfter)).to.equal(takerAmount);

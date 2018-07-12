@@ -2,7 +2,7 @@ const Token = artifacts.require("MockToken");
 import Web3 from "web3";
 import BigNumber from "bignumber.js";
 import { ZeroEx } from "0x.js";
-import { deployZeroEx, createZeroExOrder, getValues, getAddresses, signOrder } from "./helpers/ZeroExUtils";
+import { ZeroExUtils } from "./helpers/ZeroExUtils";
 import { getTxCost } from "./helpers/utils";
 
 const web3Beta = new Web3(web3.currentProvider);
@@ -12,10 +12,14 @@ contract("ZeroExWrapper", accounts => {
     const taker = accounts[0];
     const maker = accounts[1];
 
+    let utils; // zeroExUtils
     let zeroExWrapper, exchange, tokenTransferProxy, weth, token, zeroEx;
 
     beforeEach(async () => {
-        ({ zeroExWrapper, exchange, tokenTransferProxy, weth, zeroEx } = await deployZeroEx(web3Beta));
+        utils = new ZeroExUtils(web3Beta);
+        await utils.init();
+
+        ({ zeroExWrapper, exchange, tokenTransferProxy, weth, zeroEx } = utils);
     });
 
     it("should have the correct owner", async () => {
@@ -68,7 +72,7 @@ contract("ZeroExWrapper", accounts => {
         // Give tokens to the maker
         token = await Token.new([maker], [makerAmount]);
 
-        const order = await createZeroExOrder(
+        const order = await utils.createZeroExOrder(
             exchange.address,
             maker,
             token.address,
@@ -76,10 +80,10 @@ contract("ZeroExWrapper", accounts => {
             `${makerAmount}`,
             `${takerAmount}`
         );
-        const signedOrder = await signOrder(zeroEx, order, maker);
+        const signedOrder = await utils.signOrder(order, maker);
 
-        const values = getValues(order);
-        const addresses = getAddresses(order);
+        const values = utils.getValues(order);
+        const addresses = utils.getAddresses(order);
         const sig = signedOrder.ecSignature;
 
         // Approve the token transfer proxy to spend tokens on behalf of the maker
@@ -111,7 +115,7 @@ contract("ZeroExWrapper", accounts => {
         // Give tokens to the exchange wrapper
         token = await Token.new([zeroExWrapper.address], [takerAmount]);
 
-        const order = await createZeroExOrder(
+        const order = await utils.createZeroExOrder(
             exchange.address,
             maker,
             weth.address,
@@ -119,10 +123,10 @@ contract("ZeroExWrapper", accounts => {
             `${makerAmount}`,
             `${takerAmount}`
         );
-        const signedOrder = await signOrder(zeroEx, order, maker);
+        const signedOrder = await utils.signOrder(order, maker);
 
-        const values = getValues(order);
-        const addresses = getAddresses(order);
+        const values = utils.getValues(order);
+        const addresses = utils.getAddresses(order);
         const sig = signedOrder.ecSignature;
 
         // Create some wrapped ETH for the maker

@@ -80,6 +80,9 @@ contract Arbitrage is IArbitrage, ExternalCall {
         uint256 value = 0;
         if (token == ETH) {
             value = amount;
+        } else {
+            // Send tokens to Trade Executor
+            ERC20(token).transfer(tradeExecutor, amount);
         }
 
         // Execute the trades.
@@ -108,6 +111,7 @@ contract Arbitrage is IArbitrage, ExternalCall {
 
     /** 
     * @dev Calculate the amount owed after borrowing.
+    * @param amount Amount used to calculate repayment amount.
     */ 
     function getRepayAmount(uint256 amount) public view returns (uint256) {
         uint256 fee = FlashLender(lender).fee();

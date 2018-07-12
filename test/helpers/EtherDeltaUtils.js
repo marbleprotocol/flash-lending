@@ -1,12 +1,17 @@
 const EtherDelta = artifacts.require("EtherDeltaExchange");
 const EtherDeltaWrapper = artifacts.require("EtherDeltaWrapper");
 
-export const deployEtherDelta = async (web3, owner) => {
-  const etherDelta = await EtherDelta.new(owner, owner, "0x0", 0, 0, 0);
+export class EtherDeltaUtils {
+  constructor(web3) {
+    this.web3 = web3;
+  }
 
-  const etherDeltaWrapper = await EtherDeltaWrapper.new(etherDelta.address);
-  return {
-    etherDelta,
-    etherDeltaWrapper
-  };
-};
+  async init() {
+    this.etherDelta = await EtherDelta.new("0x0", "0x0", "0x0", 0, 0, 0);
+    this.etherDeltaWrapper = await EtherDeltaWrapper.new(this.etherDelta.address);
+    this.etherDeltaWrapperContract = new this.web3.eth.Contract(
+      EtherDeltaWrapper.abi,
+      this.etherDeltaWrapper.address
+    );
+  }
+}

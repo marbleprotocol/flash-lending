@@ -30,8 +30,6 @@ contract Bank is Ownable, Transfer {
     // Borrower => Approved
     mapping (address => bool) public approved;
 
-    address constant public ETH = 0x0;
-
     modifier onlyApproved() {
         require(approved[msg.sender] == true);
         _;
@@ -39,6 +37,8 @@ contract Bank is Ownable, Transfer {
 
     /**
     * @dev Deposit tokens to the bank.
+    * @param token Address of token to deposit. 0x0 for ETH
+    * @param amount Amount of token to deposit.
     */
     function deposit(address token, uint256 amount) external onlyOwner payable {
         transferFrom(token, msg.sender, this, amount);
@@ -46,6 +46,8 @@ contract Bank is Ownable, Transfer {
 
     /**
     * @dev Withdraw tokens from the bank.
+    * @param token Address of token to withdraw. 0x0 for ETH
+    * @param amount Amount of token to withdraw.
     */
     function withdraw(address token, uint256 amount) external onlyOwner {
         transfer(token, msg.sender, amount);
@@ -53,6 +55,8 @@ contract Bank is Ownable, Transfer {
 
     /**
     * @dev Borrow tokens from the bank.
+    * @param token Address of token to borrow. 0x0 for ETH
+    * @param amount Amount of token to borrow.
     */
     function borrow(address token, uint256 amount) external onlyApproved {
         borrowFor(token, msg.sender, amount);
@@ -60,6 +64,9 @@ contract Bank is Ownable, Transfer {
 
     /**
     * @dev Borrow tokens from the bank on behalf of another account.
+    * @param token Address of token to borrow. 0x0 for ETH
+    * @param who Address to send borrowed amount to.
+    * @param amount Amount of token to borrow.
     */
     function borrowFor(address token, address who, uint256 amount) public onlyApproved {
         transfer(token, who, amount);        
@@ -67,6 +74,8 @@ contract Bank is Ownable, Transfer {
 
     /**
     * @dev Repay tokens to the bank.
+    * @param token Address of token to repay. 0x0 for ETH
+    * @param amount Amount of token to repay.
     */
     function repay(address token, uint256 amount) external payable {
         transferFrom(token, msg.sender, this, amount);
@@ -74,6 +83,7 @@ contract Bank is Ownable, Transfer {
 
     /**
     * @dev Approve a new borrower.
+    * @param borrower Address of new borrower.
     */
     function addBorrower(address borrower) external onlyOwner {
         approved[borrower] = true;
@@ -81,6 +91,7 @@ contract Bank is Ownable, Transfer {
 
     /**
     * @dev Revoke approval of a borrower.
+    * @param borrower Address of borrower to revoke.
     */
     function removeBorrower(address borrower) external onlyOwner {
         approved[borrower] = false;
@@ -88,6 +99,7 @@ contract Bank is Ownable, Transfer {
 
     /**
     * @dev Gets balance of bank. 
+    * @param token Address of token to calculate total supply of.
     */
     function totalSupplyOf(address token) public view returns (uint256 balance) {
         if (token == ETH) {
