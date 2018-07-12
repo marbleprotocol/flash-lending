@@ -6,7 +6,6 @@ import "../DEX/Kyber.sol";
 contract KyberWrapper is ExchangeWrapper {
 
     ERC20 constant internal ETH_TOKEN_ADDRESS = ERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
-    uint256 public constant MAX_UINT = uint(-1);
 
     constructor(address _exchange) public {
         exchange = _exchange;
