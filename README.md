@@ -2,32 +2,42 @@
 
 # ⚡️ Flash Lending
 
-Programmatically borrow Ether to make arbitrage trades on decentralized exchanges.
+Programmatically borrow tokens and Ether as long as the funds are returned within the scope of the same transaction. Arbitrage trading on decentralized exchanges is the primary use case. Using the Flash Lender means developers can perform arbitrage trade without using your own capital. 
 
-## How
+## Wrappers
 
-[FlashLender](https://etherscan.io/address/0xf010242cA4e670f21A522421dEF3a82cDfaA7EDc) is a smart contract that lets anyone permissionlessly borrow Ether to execute an arbitrage trade.
+We wrap all the logic of trading on a each exchange into their own  smart contracts. We use these wrappers to execute trades in the protocol. The 0x wrapper, for example, converts ETH to WETH, submits the trade to the 0x exchange, then converts WETH back to ETH. 
+We’ve already implemented the wrappers for the major decentralized exchanges, but feel free to implement your own wrapper. Make a pull request if you do!
 
-```
-    function borrow(
-        address token,
-        uint256 amount,
-        address dest,
-        bytes data
-    )
-        external
-        nonReentrant
-        isArbitrage(token, amount)
-        returns (bool)
-    {
-        // Borrow from the bank and send to the arbitrageur.
-        IBank(bank).borrowFor(token, msg.sender, amount);
-        // Call the arbitrageur's execute arbitrage method.
-        return IArbitrage(msg.sender).executeArbitrage(token, amount, dest, data);
-    }
-```
+## Architecture
 
-In order to borrow, your arbitrage smart contract must implement the `executeArbitrage` callback shown above. For an example, see [Arbitrage.sol](contracts/example/Arbitrage.sol) and its associated [test](test/arbitrage.js).
+Let's walk through the flow for executing an arbitrage trade using the Flash Lender.
+
+![diagram](./images/diagram.png)
+
+* Search across decentralized exchanges for a buy and a sell order pair that could provide a potential arbitrage profit.
+* Using the corresponding exchange wrappers for the buy and sell orders, store the bytecode of the encoded function calls to supply as calldata for arbitraging.
+* Pass the bytecode for both trades to Arbitrage.sol. In one transaction, the contract will use Flash Lender to borrow from the bank, execute the trades, repay the Bank, and send profits to specified address.
+* Prior to terminating the transaction, Flash Lender checks if you have repaid the bank the original principal plus a nominal fee.
+    * If there is no profit (or you deploy a contract that doesn’t pay us back), we revert the whole transaction, moving all funds back to where they were before the transaction
+    * Otherwise, the transaction completes with profit
+
+
+## Get Started
+
+[FlashLender](https://etherscan.io/address/0xf010242cA4e670f21A522421dEF3a82cDfaA7EDc) is the entry point to our bank, allowing anyone permissionlessly borrow Ether to execute an arbitrage trade.
+
+In order to use it, your arbitrage smart contract must implement the `executeArbitrage` callback shown above. Check out [Arbitrage.sol](contracts/example/Arbitrage.sol) and its associated [test](test/arbitrage.js) to get familiar with our suggested workflow. 
+
+## Repo
+
+./contracts/. : Core Flash Lender contracts. 
+./contracts/proxy: Exchange wrappers used to execute trades.  
+./example : Contracts you can use to interact with the Flash Lender.
+./contracts/DEX : Mock Exchange contracts to test our exchange wrappers locally. 
+./interface: Implement 'IArbitrage' to borrow from the Flash Lender. 
+./contracts/mock: Various mock contracts to unit test our contracts. 
+./test : Arbitrage.js is main integration test, take a look to get familiar with the flow. 
 
 ## Testing
 
