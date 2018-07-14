@@ -6,17 +6,19 @@ Borrow Ether and ERC20 tokens to take advantage of arbitrage opportunities on Et
 
 ## How it Works
 
-We supply Ether and tokens in a smart contract called [Bank](./contracts/Bank.sol).
+We supply Ether and tokens in a smart contract called [Bank](./contracts/Bank.sol). It is deployed [here](https://etherscan.io/address/0xa04e5b78fbd31caec8f8af126d00a57f56c1f7ae) on the mainnet with 2 ETH that is available for borrowing now. 
 
 [FlashLender](./contracts/FlashLender.sol) is an approved borrower of the bank. It has a method called `borrow` that lets any smart contract do the following in a single transaction:
 1. Borrow from the bank
-2. ???
+2. ?
 3. Profit
 4. Repay the bank
 
-This allows anyone to profit from an arbitrage opportunity without using their own capital. The arbitrageur simply pays for the gas cost of the transaction.
+This means anyone can profit from an arbitrage opportunity without using their own capital. The arbitrageur simply pays for the gas cost of the transaction. Here's the high-level architecture:
 
-[FlashLender](./contracts/FlashLender.sol) enforces that the bank is repaid the entire amount borrowed plus a fee with its `isArbitrage` modifier. The fee is currently set to zero.
+![diagram](./images/diagram.png)
+
+At the end of the transaction, Flash Lender enforces that the bank is repaid the entire amount borrowed plus a fee with its `isArbitrage` modifier. The fee is currently set to zero.
 
 ## Quick Start: DEX Arbitrage
 
@@ -35,16 +37,20 @@ If you would like to add an additional exchange integration, please submit a pul
 ### Make a Trade
 
 1. Find a buy and sell order with an arbitrage profit. Most exchanges have a public API that can be used for this step, like [Radar Relay](https://developers.radarrelay.com/).
-2. [Encode](https://web3js.readthedocs.io/en/1.0/web3-eth-contract.html?#methods-mymethod-encodeabi) the buy order on the appropriate exchange wrapper.
-3. Encode the sell order on the appropriate exchange wrapper.
+2. Encode the buy order on the appropriate exchange wrapper. For example:
+```     
+	zeroExWrapperContract.methods
+            .getTokens(signedOrder.orderAddresses, signedOrder.orderValues, sig.v, sig.r, sig.s)
+            .encodeABI();
+```
+3. Likewise the sell order on the appropriate exchange wrapper.
 4. Encode the `trade` method on `TradeExecutor` using the encoded buy as `trade1` and the encoded sell as `trade2`.
-5. Use this as the data parameter for `submitTrade` on `Arbitrage`, along with the token to borrow, amount to borrow, and address to send the profits.
+5. Use the result as the data parameter for `submitTrade` on `Arbitrage`, along with the token to borrow, amount to borrow, and address to send the profits.
 
 We recommend a gas limit of 1.1 million in order to accomodate exchanges like Bancor that consume a relatively high amount of gas.
 
-For a code example, see the [arbitrage](./test/arbitrage.js) integration tests.
+See the [arbitrage](./test/arbitrage.js) integration tests for a code example. 
 
-![diagram](./images/diagram.png)
 
 ## Testing
 
