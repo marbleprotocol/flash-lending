@@ -14,7 +14,7 @@ We supply Ether and tokens in a smart contract called [Bank](./contracts/Bank.so
 3. Profit
 4. Repay the bank
 
-A smart contract must implement an `executeArbitrage` callback method where it can then execute any arbitrary code after borrowing. This means anyone can profit from an arbitrage opportunity without using their own capital. The arbitrageur simply pays for the gas cost of the transaction.
+A smart contract can execute any arbitrary code after calling `borrow` by implementing the `executeArbitrage` callback, which will get called by FlashLender. This means anyone can profit from an arbitrage opportunity without using their own capital. The arbitrageur simply pays for the gas cost of the transaction.
 
 At the end of the transaction, Flash Lender enforces that the bank is repaid the entire amount borrowed plus a fee with its `isArbitrage` modifier. The fee is currently set to zero.
 
