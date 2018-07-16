@@ -6,17 +6,15 @@ Borrow Ether and ERC20 tokens to take advantage of arbitrage opportunities on Et
 
 ## How it Works
 
-We supply Ether and tokens in a smart contract called [Bank](./contracts/Bank.sol). It is deployed [here](https://etherscan.io/address/0xa04e5b78fbd31caec8f8af126d00a57f56c1f7ae) on the mainnet with 2 ETH that is available for borrowing now. 
+We supply Ether and tokens in a smart contract called [Bank](./contracts/Bank.sol). This contract is currently deployed on the [Ethereum mainnet](https://etherscan.io/address/0xa04e5b78fbd31caec8f8af126d00a57f56c1f7ae) in public beta with a balance of 2 Ether.
 
 [FlashLender](./contracts/FlashLender.sol) is an approved borrower of the bank. It has a method called `borrow` that lets any smart contract do the following in a single transaction:
 1. Borrow from the bank
-2. ?
+2. [?](https://static.tvtropes.org/pmwiki/pub/images/missing_steps_plan.jpg)
 3. Profit
 4. Repay the bank
 
-This means anyone can profit from an arbitrage opportunity without using their own capital. The arbitrageur simply pays for the gas cost of the transaction. Here's the high-level architecture:
-
-![diagram](./images/diagram.png)
+A smart contract must implement an `executeArbitrage` callback method where it can then execute any arbitrary code after borrowing. This means anyone can profit from an arbitrage opportunity without using their own capital. The arbitrageur simply pays for the gas cost of the transaction.
 
 At the end of the transaction, Flash Lender enforces that the bank is repaid the entire amount borrowed plus a fee with its `isArbitrage` modifier. The fee is currently set to zero.
 
@@ -32,22 +30,24 @@ We deployed [Arbitrage](./contracts/example/Arbitrage.sol), [TradeExecutor](./co
 
 We can only support exchanges that allow smart contracts to execute orders. This includes 0x, Bancor, Kyber, and EtherDelta.
 
-If you would like to add an additional exchange integration, please submit a pull request! 
+If you would like to add an additional exchange integration, please submit a pull request!
+
+If you decide to use this set of smart contracts, this is the basic architecture:
+
+![diagram](./images/diagram.png)
 
 ### Make a Trade
 
 1. Find a buy and sell order with an arbitrage profit. Most exchanges have a public API that can be used for this step, like [Radar Relay](https://developers.radarrelay.com/).
 2. Encode the buy order on the appropriate exchange wrapper. For example:
 ```     
-	zeroExWrapperContract.methods
-            .getTokens(signedOrder.orderAddresses, signedOrder.orderValues, sig.v, sig.r, sig.s)
-            .encodeABI();
+zeroExWrapperContract.methods.getTokens(orderAddresses, orderValues, v, r, s).encodeABI();
 ```
-3. Likewise the sell order on the appropriate exchange wrapper.
+3. Encode the sell order on the appropriate exchange wrapper.
 4. Encode the `trade` method on `TradeExecutor` using the encoded buy as `trade1` and the encoded sell as `trade2`.
 5. Use the result as the data parameter for `submitTrade` on `Arbitrage`, along with the token to borrow, amount to borrow, and address to send the profits.
 
-We recommend a gas limit of 1.1 million in order to accomodate exchanges like Bancor that consume a relatively high amount of gas.
+We recommend a gas limit of 1 million in order to accomodate exchanges like Bancor that consume a relatively high amount of gas.
 
 See the [arbitrage](./test/arbitrage.js) integration tests for a code example. 
 
