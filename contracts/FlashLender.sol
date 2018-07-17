@@ -40,10 +40,11 @@ contract FlashLender is ReentrancyGuard, Ownable {
     * @param amount Amount borrowed.
     */
     modifier isArbitrage(address token, uint256 amount) {
-        uint256 balance = IBank(bank).totalSupplyOf(token);
+        IBank memBank = IBank(bank);
+        uint256 balance = memBank.totalSupplyOf(token);
         uint256 feeAmount = amount.mul(fee).div(10 ** 18); 
         _;
-        require(IBank(bank).totalSupplyOf(token) >= (balance.add(feeAmount)));
+        require(memBank.totalSupplyOf(token) >= (balance.add(feeAmount)));
     }
 
     constructor(address _bank, uint256 _fee) public {
