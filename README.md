@@ -14,7 +14,7 @@ We supply Ether and tokens in a smart contract called [Bank](./contracts/Bank.so
 3. Profit
 4. Repay the bank
 
-A smart contract can execute any arbitrary code after calling `borrow` by implementing the `executeArbitrage` callback, which will get called by Flash Lender. At the end of the transaction, Flash Lender enforces that the bank is repaid the entire amount borrowed plus a fee with its `isArbitrage` modifier. The fee is currently set to zero.
+A smart contract can execute any arbitrary code after calling `borrow` by implementing the `executeArbitrage` callback, which will get called by Flash Lender. At the end of the transaction, Flash Lender enforces that the bank is repaid the entire amount borrowed plus a fee with its `isArbitrage` modifier. If the bank is not repaid, the entire transaction will revert. The fee is currently set to zero.
 
 This lets anyone profit from an arbitrage opportunity on Ethereum without using their own capital. The arbitrageur simply pays for the gas cost of the transaction.
 
