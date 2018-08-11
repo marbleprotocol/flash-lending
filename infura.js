@@ -1,13 +1,13 @@
-var Wallet = require("ethereumjs-wallet");
-var ProviderEngine = require("web3-provider-engine");
-var FiltersSubprovider = require("web3-provider-engine/subproviders/filters.js");
-var WalletSubprovider = require("web3-provider-engine/subproviders/wallet.js");
+const Wallet = require("ethereumjs-wallet");
+const ProviderEngine = require("web3-provider-engine");
+const FiltersSubprovider = require("web3-provider-engine/subproviders/filters.js");
+const WalletSubprovider = require("web3-provider-engine/subproviders/wallet.js");
 const FetchSubprovider = require("web3-provider-engine/subproviders/fetch.js");
 require("dotenv").config();
 
 class Infura {
     constructor(infuraURL) {
-        var privateKeyBuffer = new Buffer(process.env.PRIVATE_KEY, "hex");
+        const privateKeyBuffer = new Buffer(process.env.PRIVATE_KEY, "hex");
         this.wallet = new Wallet(privateKeyBuffer);
         this.address = "0x" + this.wallet.getAddress().toString("hex");
         this.engine = new ProviderEngine();
