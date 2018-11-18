@@ -1,7 +1,7 @@
 {
   "name": "marble",
   "version": "0.0.1",
-  "description": "Trove smart contracts",
+  "description": "Flash lending smart contracts",
   "main": "truffle-config.js",
   "directories": {
     "test": "test"
@@ -13,8 +13,8 @@
     "profile": "node scripts/profiler.js",
     "flatten": "truffle-flattener"
   },
-  "author": "",
-  "license": "GPL",
+  "author": "Rich McAteer <rich@marble.org>",
+  "license": "Apache 2.0",
   "dependencies": {
     "0x.js": "^0.37.2",
     "ascii-table": "0.0.9",
